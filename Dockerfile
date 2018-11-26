@@ -6,14 +6,13 @@ RUN mkdir -p /usr/splay/lib/lua
 
 WORKDIR /usr/splay
 
-RUN apt-get update 
-RUN apt-get -y --no-install-recommends install build-essential openssl libssl1.0 
-RUN apt-get -y --no-install-recommends install lua5.3 liblua5.3-0 liblua5.3-dev
+RUN apt-get update && apt-get -y --no-install-recommends install \
+    build-essential openssl libssl1.0 lua5.3 liblua5.3-0 liblua5.3-dev
 # Due to a bug of lua 5.3 package where the symbol link is not create
 RUN update-alternatives --install /usr/bin/lua lua /usr/bin/lua5.3 10
 RUN update-alternatives --install /usr/bin/luac luac /usr/bin/luac5.3 10
 
-RUN apt-get -y --no-install-recommends install lua-socket lua-socket-dev lua-sec
+RUN apt-get update && apt-get -y --no-install-recommends install lua-socket lua-socket-dev lua-sec
 
 ENV L_PATH  "/usr/splay/lib/lua"
 ENV L_CPATH "/usr/splay/lib/c"
