@@ -1101,8 +1101,11 @@ end
 
 function controller(so)
 	print("Controller registration, KEY : "..splayd.settings.key..", session : "..splayd.session )
-	-- Send the splayd-type
+	
+	-- Send the splayd-type 
+	-- TODO: After remove protocol grid => Still useful?
 	assert(so:send(splayd.settings.protocol))
+	
 	-- the splayd registers on the Controller
 	assert(so:send("KEY"))
 	assert(so:send(splayd.settings.key))
@@ -1113,11 +1116,6 @@ function controller(so)
 	
 	-- 
 	print("Registration information send to controller")
-
-	-- call only if settings splayd-type == 'grid'
-	if splayd.settings.protocol == "grid" then
-		check_libs(so)
-	end
 	
 	local msg = assert(so:receive())
 	print("Registration response : "..msg)
@@ -1405,7 +1403,8 @@ splayd.settings.controller = {}
 splayd.settings.controller.ip = "127.0.0.1"
 splayd.settings.controller.port = 11000
 
-splayd.settings.protocol = "standard" -- "standard OR grid, default is STANDARD"
+-- "standard", "grid" was removed : TODO : still important to have protocol passing
+splayd.settings.protocol = "standard" 
 
 splayd.settings.job = {}
 splayd.settings.job.max_number = 16

@@ -34,7 +34,6 @@ along with Splayd. If not, see <http://www.gnu.org/licenses/>.
 --splayd.settings.controller.ip = "localhost"
 --splayd.settings.controller.port = 11000
 
--- Set to "grid" to support native libs
 splayd.settings.protocol = "standard"
 
 -- all sizes are in bytes

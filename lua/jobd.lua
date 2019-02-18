@@ -41,7 +41,7 @@ do
 	print = function(...)
 		--p(...)
 		local s, u = misc.time()
-		p(s, ...) --local timestamp, used when controller configured with UseSplaydTimestamps
+		p(s, u, ...) --local timestamp, used when controller configured with UseSplaydTimestamps
 		io.flush()
 	end
 end
