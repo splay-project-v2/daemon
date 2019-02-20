@@ -970,8 +970,6 @@ local function one_loop(so)
 			register(so)
 		elseif msg == "FREE" then
 			n_free(so)
-		elseif msg == "UNREGISTER" then -- deprecated
-			n_free(so)
 		elseif msg == "LOG" then
 			n_log(so)
 		elseif msg == "LOCAL_LOG" then
@@ -1079,6 +1077,7 @@ end
 
 -- Reads the libs in the cache, send them to the controller and 
 -- according to the controller update the old ones and add the new ones
+-- TODO : NOT USED ? (GRID ?) 
 function check_libs(so)
 	local libs_in_cache = list_libs_in_cache(libs_cache_dir)
 	local msg = json.encode(libs_in_cache)
