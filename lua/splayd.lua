@@ -1358,7 +1358,7 @@ jobs_lib_dir = jobs_fs_dir.."/lib"
 
 lua_version = "Lua 5.3" -- Do not run without this version.
 SSL = true -- Use SSL instead of plain text connection.
-connect_retry_timeout = 180 -- Average reconnect time when connection loose.
+connect_retry_timeout = 10 -- Average reconnect time when connection loose.
 max_disconnection_time = 3600 -- Reset jobs in case of a very long disconnection.
 always_run = true -- Try to reconnect even if rejected by the controller.
 -- Allow execution of an untrusted executable (only for specific deployments)
@@ -1374,7 +1374,7 @@ job_trace_ended = {}
 if production then
 	exec_script = false
 	SSL = true
-	connect_retry_timeout = 180
+	connect_retry_timeout = 10
 	max_disconnection_time = 3600
 	always_run = true
 	jobs_log = false
