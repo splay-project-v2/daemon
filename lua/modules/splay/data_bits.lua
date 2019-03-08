@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License
 along with Splayd. If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-require("splay.data_bits_core") -- register splay.data_bits
+local data_bits_core = require("splay.data_bits_core") -- register splay.data_bits
 
 local _M ={}
 
