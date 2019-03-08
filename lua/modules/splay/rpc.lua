@@ -50,7 +50,7 @@ _M._DESCRIPTION = "Remote Procedure Call over TCP"
 _M._VERSION     = 1.0
 
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[splay.rpc]")
+local l_o = log.new(1, "[splay.rpc]")
 
 _M.settings = {
 	max = nil, -- max outgoing RPCs

@@ -60,7 +60,7 @@ _M._VERSION     = 1.0
 _M._NAME = "luasocket"
 
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[".._M._NAME.."]")
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 --[[
 Set use_async_dns=false to use the default LuaSocket's blocking DNS resolution.

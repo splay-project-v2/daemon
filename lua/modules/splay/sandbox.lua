@@ -73,7 +73,7 @@ _M._DESCRIPTION = "Sandbox"
 _M._VERSION     = 1.0
 
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[splay.sandbox]")
+local l_o = log.new(1, "[splay.sandbox]")
 
 --[[ CODE ]]--
 

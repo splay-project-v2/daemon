@@ -33,12 +33,14 @@ local tonumber = tonumber
 local tostring = tostring
 local type = type
 
---module("splay.benc")
 local _M = {}
+
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "Enhanced bencoding for Lua"
 _M._VERSION     = 1.0
-local l_o = log.new(3, "[splay.benc]")
+_M._NAME = "splay.benc"
+
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 local pos = 1
 local data = nil

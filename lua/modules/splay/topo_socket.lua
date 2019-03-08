@@ -73,7 +73,7 @@ local assert = assert
 _M = {}
 
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[".._NAME.."]")
+local l_o = log.new(1, "[".._NAME.."]")
 
 local in_delay=0
 local out_delay=0

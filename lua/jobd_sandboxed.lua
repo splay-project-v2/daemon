@@ -284,8 +284,8 @@ sandbox.protect_env({
 			"splay.socket_events",
 			"splay.luasocket",
 			"splay.async_dns",
-		    "splay.topo_socket",
-		    "splay.token_bucket",
+		  "splay.topo_socket",
+		  "splay.token_bucket",
 			"splay.tree",
 			"splay.topo_gossip",
 			native_from_job

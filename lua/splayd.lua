@@ -1035,6 +1035,7 @@ local function error_cmd_handler(x)
 end
 
 function server_loop(so)
+	-- TODO : the change server_loop into one_loop 
 	while true do
 		local status, ret = xpcall(one_loop, error_cmd_handler, so)
 		if status then 

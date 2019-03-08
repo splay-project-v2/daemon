@@ -7,7 +7,7 @@ local log = require"splay.log"
 local misc= require"splay.misc"
 _M = {}
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[topo_gossip]")
+local l_o = log.new(1, "[topo_gossip]")
 
 local nodes=nil
 local me=nil

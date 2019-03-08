@@ -76,7 +76,7 @@ _M._DESCRIPTION = "Restrictions for LuaSocket"
 _M._VERSION     = 1.0
 _M._NAME = "splay.restricted_socket"
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[".._M._NAME.."]")
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 -- vars
 local total_sent = 0

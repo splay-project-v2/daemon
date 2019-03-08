@@ -25,13 +25,14 @@ local string = require"string"
 local pairs = pairs
 local type = type
 
---module("splay.bits")
-
 local _M = {}
+
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "Bits manipulation"
 _M._VERSION     = 1.0
-local l_o = log.new(3, "[splay.bits")
+_M._NAME = "splay.bits"
+
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 function _M.init(bits, size)
 	for i = 1, size do

@@ -83,7 +83,7 @@ _M._DESCRIPTION = "Restricted IO"
 _M._VERSION     = 1.0
 
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[splay.restricted_io]")
+local l_o = log.new(1, "[splay.restricted_io]")
 
 -- Dangerous functions
 local popen = io.popen

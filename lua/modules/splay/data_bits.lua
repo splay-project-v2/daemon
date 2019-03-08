@@ -21,15 +21,17 @@ You should have received a copy of the GNU General Public License
 along with Splayd. If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local data_bits_core = require("splay.data_bits_core") -- register splay.data_bits
+require("splay.data_bits_core") -- register splay.data_bits
 
 local _M ={}
+
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "Bits manipulation on data"
 _M._VERSION     = 1.0
+_M._NAME = "splay.data_bits"
 
 for k,v in pairs(data_bits_core) do
-	_M[k] = v
+       _M[k] = v
 end
 
 return _M

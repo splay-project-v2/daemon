@@ -44,10 +44,10 @@ local log = require"splay.log"
 local _M = {} --return this table, usually _M
 
 _M._DESCRIPTION = "A pure-Lua DNS protocol implementation"
-_M.VERSION = 1.0
+_M._VERSION = 1.0
 _M._NAME = "splay.async_dns"
 
-local l_o = log.new(3, "[".._M._NAME.."]")
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 local default_timeout = 15
 

@@ -14,6 +14,7 @@ local _M = {}
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "Binary encoding for Splay with https://github.com/agladysh/luabins"
 _M._VERSION     = 1.0
+_M._NAME = "splay.lbinenc"
 
 function _M.decode(d)
 	local res, data = lbinenc.load(d)

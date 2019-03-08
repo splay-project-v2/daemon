@@ -37,7 +37,7 @@ _M._DESCRIPTION = "Network related functions, objects, .."
 _M._VERSION     = 1.0
 
 --[[ DEBUG ]]--
-local l_o = log.new(3, "[splay.net]")
+local l_o = log.new(1, "[splay.net]")
 
 _M.settings = {
 	timeout = 600,

@@ -30,10 +30,13 @@ local type = type
 local setmetatable = setmetatable
 
 local _M = {}
+
 _M._DESCRIPTION = "Json send and receive functions (socket wrapper) for Json4Lua"
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._VERSION     = 1.0
-local l_o = log.new(3, "[splay.json]")
+_M._NAME = "splay.json"
+
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 function _M.send(socket, data)
 	return socket:send(json.encode(data).."\n")
