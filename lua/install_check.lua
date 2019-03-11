@@ -48,7 +48,7 @@ require"ssl"
 print("------------- SSL Ok-------------")
 
 -- Luacrypto
-require"crypto"
+require"openssl"
 
 print("------------- end testing installation -------------")
 print()

@@ -67,8 +67,8 @@ local io = require("io")
 local os = require("os")
 local table = require("table")
 local string = require("string")
-local crypto = require("crypto")
-local evp = crypto.evp
+local openssl = require("openssl")
+local evp = openssl.digest
 local log = require("splay.log")
 
 local setmetatable = setmetatable
@@ -221,7 +221,7 @@ function _M.open(name, flags)
 	total_file_descriptors = total_file_descriptors + 1
 
 	local d = evp.new("md5")
-	local fs_name = prefix..d:digest(name)
+	local fs_name = prefix..d:final(name)
 
 	local ori_file = io.open(dir.."/"..fs_name, flags)
 
@@ -385,7 +385,7 @@ function _M.remove(name)
 		return nil, "File not found: "..name
 	else
 		local d = evp.new("md5")
-		local fs_name = d:digest(name)
+		local fs_name = d:final(name)
 		local ok, msg = os.remove(dir.."/"..prefix..fs_name)
 		if ok then
 			total_size = total_size - fs[name]
@@ -400,16 +400,16 @@ end
 -- Link from os.rename(oldname, newname)
 function _M.rename(old_name, new_name)
 		local d = evp.new("md5")
-		local o_n = d:digest(old_name)
+		local o_n = d:final(old_name)
 		d = evp.new("md5")
-		local n_n = d:digest(new_name)
+		local n_n = d:final(new_name)
 		return os.rename(dir.."/"..prefix..o_n, dir.."/"..prefix..n_n)
 end
 
 -- Link from os.tmpname()
 function _M.tmpname()
 	local d = evp.new("md5")
-	return d:digest(math.random(2^31 - 1))
+	return d:final(math.random(2^31 - 1))
 end
 
 function _M.exists(name)
