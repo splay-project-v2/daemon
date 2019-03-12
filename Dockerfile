@@ -33,7 +33,7 @@ WORKDIR /app
 ### Make so files and executable jobs and splayd
 COPY c/ ./
 
-RUN mkdir ./splay
+RUN mkdir -p ./splay
 RUN make all
 
 ### Clean src 
@@ -45,9 +45,10 @@ RUN rm -f ./*.o ./*.c ./*.h && \
 COPY lua/*.lua ./
 COPY lua/splay/ ./splay
 
-RUN lua install_check.lua
-
+## Launch Testing to verify the installation
 COPY lua/tests ./
 RUN busted ./ -p spec_
 
+## Deploy script 
+COPY ./deploy.sh ./
 CMD ["./deploy.sh"]

@@ -1,5 +1,5 @@
-describe("Very basic Testing", function()
-    it("Should works", function()
+describe("The installation Test", function()
+    it("Should Works - check busted", function()
         assert.True(1 == 1)
     end)
 
@@ -34,6 +34,14 @@ describe("Very basic Testing", function()
         -- SSL libraries
         assert.truthy(require("ssl"))
         assert.truthy(require("openssl"))
+    end)
+
+    it("Splay base check", function()
+        require("splay.base")
+        assert.truthy(misc)
+        assert.truthy(log)
+        assert.truthy(events)
+        assert.truthy(socket)
     end)
 
 end)
