@@ -24,6 +24,7 @@ clean:
 	rm -f luacrypto/*.o
 	rm -f lbase64/*.o
 	rm -f luacrypto/*.so
+	rm -rf splay/
 
 cert:
 	openssl req -newkey rsa:1024 -sha1 -keyout rootkey.pem -out rootreq.pem \
