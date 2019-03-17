@@ -22,6 +22,7 @@ RUN rm -rf /luarocks-$LUAROCKS_VERSION
 RUN luarocks install luasocket 
 RUN luarocks install luaossl
 RUN luarocks install LuaSec
+
 # For testing
 RUN luarocks install busted
 

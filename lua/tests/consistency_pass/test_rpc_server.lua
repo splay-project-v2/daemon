@@ -1,7 +1,5 @@
 require"splay.base"
 local rpc = require"splay.rpc"
-local log = require"splay.log"
-local l_o = log.new(3, "[test_rpc_server]")
 function pong()
 	return "pong"
 end

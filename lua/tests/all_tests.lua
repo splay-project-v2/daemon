@@ -41,7 +41,7 @@ local function testDirectory(folder_regex)
     end
 end
 
-testDirectory("consistency_pass/*.lua")
+testDirectory("./tests/consistency_pass/*.lua")
 -- testDirectory("performance_pass/*.lua")
 -- testDirectory("consistency_fail/*.lua")
 -- testDirectory("performance_fail/*.lua")
