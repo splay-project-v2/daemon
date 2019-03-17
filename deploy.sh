@@ -1,4 +1,4 @@
-#!/bin/bash -
+#!/bin/sh -
 #===============================================================================
 #
 #          FILE: deploy.sh
@@ -25,4 +25,4 @@ set -o nounset                              # Treat unset variables as an error
 # LUA_CPATH="${LUA_CPATH};/usr/splay/lib/c/?.so"
 
 # LUA_PATH=${LUA_PATH} LUA_CPATH=${LUA_CPATH} lua splayd.lua ${HOSTNAME} splay_controller 11000 11000 12000
-lua splayd.lua ${HOSTNAME} splay_controller 11000 11000 12000
+lua5.3 splayd.lua ${HOSTNAME} splay_controller 11000 11000 12000

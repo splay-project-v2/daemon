@@ -4,7 +4,7 @@ CC= gcc
 
 INCLUDE= -I/usr/include/lua5.3
 
-LIBS= -L/usr/lib -llua -lm
+LIBS= -L/usr/lib/lua5.3/ -llua -lm
 OPENSSL_LIBS= -L/usr/local/openssl/lib -lssl
 
 CFLAGS= -Wall -O2 -pedantic $(INCLUDE)
@@ -62,12 +62,12 @@ jobd: jobd.o splay_lib.o compmod.o
 
 
 # Lua Extension modules
-so_module: splay_core.so splay/misc_core.so splay/data_bits_core.so lbase64.so
+so_module: splay_core.so splay/misc_core.so splay/data_bits_core.so base64.so
 
 ### Splay module
 splay_core.so: splay.o
 	$(CC) -O -fpic -shared -o splay_core.so splay.o compmod.o -lm
-	#strip splay_core.so
+	strip splay_core.so
 
 splay.o: $(SO_PATH)/splay.c $(SO_PATH)/splay.h
 	$(CC) -fpic $(CFLAGS) -c -o splay.o $(SO_PATH)/splay.c
@@ -75,6 +75,7 @@ splay.o: $(SO_PATH)/splay.c $(SO_PATH)/splay.h
 ### Misc module
 splay/misc_core.so: misc.o
 	$(CC) -O -fpic -shared -o splay/misc_core.so misc.o compmod.o -lm
+	strip splay/misc_core.so
 
 misc.o: $(SO_PATH)/misc.c $(SO_PATH)/misc.h
 	$(CC) -fpic $(CFLAGS) -c -o misc.o $(SO_PATH)/misc.c
@@ -82,13 +83,15 @@ misc.o: $(SO_PATH)/misc.c $(SO_PATH)/misc.h
 ### Data_bits module
 splay/data_bits_core.so: data_bits.o
 	$(CC) -O -fpic -shared -o splay/data_bits_core.so data_bits.o compmod.o -lm
+	strip splay/data_bits_core.so
 
 data_bits.o: $(SO_PATH)/data_bits.c $(SO_PATH)/data_bits.h
 	$(CC) -fpic $(CFLAGS) -c -o data_bits.o $(SO_PATH)/data_bits.c
 
 ### base64
-lbase64.so: lbase64/lbase64.o
+base64.so: lbase64/lbase64.o
 	$(CC) -O -fpic -shared -o base64.so lbase64/*.o compmod.o $(OPENSSL_LIBS)
+	strip base64.so
 
 lbase64/lbase64.o:
 	$(CC) -fpic $(CFLAGS) -c -o lbase64/lbase64.o $(SO_PATH)/lbase64/lbase64.c
