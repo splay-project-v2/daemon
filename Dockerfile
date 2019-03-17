@@ -39,7 +39,7 @@ RUN make all
 
 ### Clean src 
 RUN rm -f ./*.o ./*.c ./*.h && \ 
-    rm -fr ./luacrypto ./lbase64 && \
+    rm -fr ./lbase64 && \
     rm -f misc_core.so data_bits_core.so
 
 ## Lua Module

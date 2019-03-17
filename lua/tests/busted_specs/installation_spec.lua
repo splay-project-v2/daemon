@@ -34,6 +34,8 @@ describe("The installation Test", function()
         -- SSL libraries
         assert.truthy(require("ssl"))
         assert.truthy(require("openssl"))
+        assert.truthy(require("openssl.digest"))
+
     end)
 
     it("Splay base check", function()

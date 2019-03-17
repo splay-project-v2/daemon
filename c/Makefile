@@ -5,7 +5,7 @@ CC= gcc
 INCLUDE= -I/usr/include/lua5.3
 
 LIBS= -L/usr/lib -llua -lm
-OPENSSL_LIBS= -L/usr/local/openssl/lib -lcrypto -lssl
+OPENSSL_LIBS= -L/usr/local/openssl/lib -lssl
 
 CFLAGS= -Wall -O2 -pedantic $(INCLUDE)
 C_EXEC_PATH=.
@@ -21,9 +21,7 @@ clean:
 	rm -f *.log
 	rm -f *.pem *.srl
 	rm -f splayd jobd
-	rm -f luacrypto/*.o
 	rm -f lbase64/*.o
-	rm -f luacrypto/*.so
 	rm -rf splay/
 
 cert:

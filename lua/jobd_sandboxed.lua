@@ -269,7 +269,7 @@ sandbox.protect_env({
 			"splay.rpcq",
 			"splay.socket",
 			"splay.urpc",
-			"crypto",
+			"openssl.digest",
 			"socket",
 			"socket.ftp",
 			"socket.http",

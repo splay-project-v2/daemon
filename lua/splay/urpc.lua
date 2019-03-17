@@ -90,7 +90,7 @@ because the previous socket waiting is closed.
 local math = require"math"
 local string = require"string"
 local table = require"table"
-local openssl = require"openssl"
+local digest = require"openssl.digest"
 local events = require"splay.events"
 local socket = require"splay.socket"
 --local enc = require"json"
@@ -142,7 +142,7 @@ local base_key = nil
 local c = 0
 function _M.get_key(seed)
 	if not base_key then
-		base_key = openssl.digest.new("sha1"):final(math.random()..tostring(seed))
+		base_key = misc.binary_string_to_hex(digest.new("sha1"):final(math.random()..tostring(seed)))
 	end
 	c = c + 1
 	return base_key..c

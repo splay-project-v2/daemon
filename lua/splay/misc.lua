@@ -284,6 +284,14 @@ function _M.hash_ascii_to_byte(s)
 	return hash
 end
 
+function _M.binary_string_to_hex(binary_string)
+	local hash = ""
+	for i = 1, #binary_string do
+		hash = hash .. string.format("%.2x", string.byte(binary_string, i))
+	end
+	return hash
+end
+
 function _M.dec_to_base(input, b)
 	if input == 0 then return "0" end
 	local k, out, d = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""

@@ -39,10 +39,10 @@ local debug = require"debug"
 
 local json=require"json"
 local splay=require"splay"
-local openssl = require"openssl"
-local evp = openssl.evp
+local digest = require"openssl.digest"
 local socket=require"socket"
 local llenc = require"splay.llenc"
+local misc = require("splay.misc")
 
 local base64 = require"base64"
 math.randomseed(os.time())
@@ -586,8 +586,8 @@ function prepare_lib_directory(job)
 		if job.lib_code and job.lib_code ~= "" then
 			local lib_file = io.open(libs_cache_dir.."/".. job.lib_sha1, "w+")
 			local lib_code = base64.decode(job.lib_code)
-			local sha1=evp.new("sha1")
-			local lib_code_sha1 =  sha1:final(lib_code)
+			local sha1 = digest.new("sha1")
+			local lib_code_sha1 =  misc.binary_string_to_hex(sha1:final(lib_code))
 
 			if (lib_code_sha1 == job.lib_sha1) then
 				lib_file:write(lib_code)
@@ -1067,8 +1067,8 @@ function list_libs_in_cache(dir)
 	-- TODO Find another pattern
 	for lib_name in string.gmatch(libs_list, "[^%s]+") do
 		lib = io.open(dir.."/"..lib_name):read("*a")
-		local sha1=evp.new("sha1")
-		lib_sha1 =  sha1:final(lib)
+		local sha1 = digest.new("sha1")
+		lib_sha1 =  misc.binary_string_to_hex(sha1:final(lib))
 		print("splayd.lua:list_libs file with sha1 ",lib_sha1)
 		table.insert(lib_table, {name = lib_name, sha1 = lib_sha1})
 	end

@@ -25,12 +25,6 @@ Author: Bruno Silvestre
 License: MIT
 URL: http://www.inf.puc-rio.br/~brunoos/luasec/
 
---[ Luacrypto ]--
-
-Author: Keith Howe
-License: MIT
-URL: http://luacrypto.luaforge.net/
-
 --[ json.lua ]--
 
 Authors: rix 
