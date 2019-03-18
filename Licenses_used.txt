@@ -4,7 +4,6 @@ Author: Lorenzo Leonini - University of Neuchâtel
 License: GPLv3 (see COPYRIGHT in this package)
 URL: http://www.splay-project.org/
 
-
 Other contributions:
 
 --[ Lua ]--
@@ -25,8 +24,20 @@ Author: Bruno Silvestre
 License: MIT
 URL: http://www.inf.puc-rio.br/~brunoos/luasec/
 
+--[ luaossl ]--
+
+Author:  William Ahern, Daurnimator
+License: MIT??
+URL: https://github.com/wahern/luaossl
+
 --[ json.lua ]--
 
 Authors: rix 
 Licence: MIT
 URL: https://github.com/rxi/json.lua
+
+--[ busted ]--
+
+Author: Olivine Labs
+License: MIT
+URL: https://github.com/Olivine-Labs/busted

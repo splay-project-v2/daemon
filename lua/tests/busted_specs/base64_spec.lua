@@ -1,5 +1,5 @@
 describe("Test Base64 lib", function()
-    it("...", function()
+    it(" - Random test", function()
         local base64 = require("base64")
         assert.truthy(base64)
         assert.truthy(base64.version)
@@ -28,5 +28,19 @@ describe("Test Base64 lib", function()
         test("x")
         test("xy")
         test("xyz")
+    end)
+
+    it("Testing result", function()
+        local base64 = require("base64")
+        assert.truthy(base64)
+        assert.truthy(base64.version)
+        
+        res_enc = base64.encode("splay")
+
+        assert.are.equals(res_enc, "c3BsYXk=")
+
+        res_dec= base64.decode("U3BsYXlWMg==")
+
+        assert.are.equals(res_dec, "SplayV2")
     end)
 end)
