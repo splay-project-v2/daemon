@@ -37,7 +37,7 @@ RUN rm -f ./*.o ./*.c ./*.h && \
     rm -f misc_core.so data_bits_core.so
 
 ## Lua Module
-COPY lua/*.lua ./
+COPY lua/ ./
 COPY lua/splay/ ./splay
 
 ## Launch Testing to verify the installation
