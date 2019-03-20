@@ -61,6 +61,7 @@ function setContains(set, key)
 end
 
 function stepdown(term)
+    print("Stepdown")
     state.term = tonumber(term)
     state.state = "follower"
     state.voteFor = nil
@@ -68,11 +69,13 @@ function stepdown(term)
 end
 
 -- Trigger functions
-function trigger_rpc_timeout(socket)
-    if (state == "candidate") then
+function trigger_rpc_timeout(s)
+    local ip, port = s:getpeername()
+    if (state.state == "candidate") then
+        print("Send new rpc timeout for "..ip..":"..port)
         local ip, port = s:getpeername()
         rpc_time[ip..port] = misc.time() + (math.random() * 0.2) + rpc_timeout
-        socket:send(vote_msg.req.." "..state.term)
+        s:send(vote_msg.req.." "..state.term.."\n")
     end
 end
 
@@ -82,6 +85,7 @@ function trigger_election_timeout()
         state.term = state.term + 1
         state.state = "candidate"
         state.voteFor = job.me.ip..job.me.port
+        state.votes = {}
         state.votes[job.me.ip..job.me.port] = true
         for i, s in ipairs(sockets) do
             local ip, port = s:getpeername()
@@ -92,7 +96,7 @@ end
 
 function trigger_hearbeat_timeout(s)
     state.term = state.term + 1
-    s:send(heartbeat_msg.." "..state.term)
+    s:send(heartbeat_msg.." "..state.term.."\n")
     heart_time = misc.time() + heartbeat_timeout
 end
 
@@ -103,7 +107,6 @@ function send(s)
     while events.yield() do
         -- RPC Timeout
         if (not isLeader(job.me) and  rpc_time[ip..port] ~= nil and rpc_time[ip..port] < misc.time()) then
-            print("Trigger rpc timeout for "..ip..":"..port)
             trigger_rpc_timeout(s)
         end
         -- HEARTBEAT Timeout
@@ -116,42 +119,51 @@ end
 
 function receive(s)
     local ip, port = s:getpeername()
+    local ip_me, port_me = s:getsockname()
     while events.yield() do
-        local data = s:receive("*l")
-        print("I receive "..data.." From "..ip..":"..port)
-        local table_d = misc.split(data, " ")
-        if table_d[1] == vote_msg.rep then
-            -- VOTE RES
-            local term, vote = tonumber(table_d[2]), table_d[3]
-            if term > state.term then
-                stepdown(term)
-            end
-            if term == state.term and state.state == "candidat" then
-                if vote == job.me.ip..job.me.port then
-                    state.votes[ip..port] = true
+        local data, err = s:receive("*l")
+        if data == nil then
+            print("ERROR : "..err)
+            return false
+        else
+            print("I receive "..data.." From "..ip..":"..port)
+            local table_d = misc.split(data, " ")
+            if table_d[1] == vote_msg.rep then
+                -- VOTE REP
+                local term, vote = tonumber(table_d[2]), table_d[3]
+                if term > state.term then
+                    stepdown(term)
                 end
-                rpc_time[ip..port] = nil
-                if table.getn(state.votes) > table.getn(job.nodes) /2 then
-                    print("I am the leader")
-                    state.state = "leader"
-                    state.leader = job.me
-                    heart_time = misc.time()
+                if term == state.term and state.state == "candidat" then
+                    if vote == ip_me..port_me then
+                        state.votes[ip..port] = true
+                        print("I have received one vote from "..ip..port.." | cnt = "..table.getn(state.votes))
+                    end
+                    rpc_time[ip..port] = nil
+                    if table.getn(state.votes) > table.getn(job.nodes) /2 then
+                        print("I am the leader")
+                        state.state = "leader"
+                        state.leader = job.me
+                        heart_time = misc.time()
+                    end
                 end
+            elseif table_d[1] == vote_msg.req then
+                -- VOTE REQ
+                local term = tonumber(table_d[2])
+                if term > state.term then
+                    stepdown(term)
+                end
+                if term == state.term and (state.voteFor == nil or state.voteFor == ip..port) then
+                    state.voteFor = ip..port
+                    election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
+                end
+                s:send(vote_msg.rep.." "..state.term.." "..state.voteFor.."\n")
+            elseif table_d[1] == heartbeat_msg then
+                -- HEARBEAT
+                state.term = tonumber(table_d[2])
+            else
+                print("Warning : unkown message"..table_d[1])
             end
-        elseif table_d[1] == vote_msg.req then
-            -- VOTE REQ
-            local term = tonumber(table_d[2])
-            if term > state.term then
-                stepdown(term)
-            end
-            if term == state.term and (state.voteFor == nil or state.voteFor == ip..port) then
-                state.voteFor = ip..port
-                election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
-            end
-            s:send(vote_msg.rep.." "..state.term..state.voteFor)
-        elseif table_d[1] == heartbeat_msg then
-            -- HEARBEAT
-            state.term = tonumber(table_d[2])
         end
     end
 end
@@ -169,7 +181,6 @@ function init(s, connect)
         print("I am already connect => close this one")
         return false
     else
-        print("New Connection")
         sockets[ip..port] = s
     end
 end
