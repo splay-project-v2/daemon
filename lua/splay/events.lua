@@ -98,12 +98,6 @@ local log = require"splay.log"
 
 local debuglib = require"debug"
 
-local next = next
-local pairs = pairs
-local type = type
-local ipairs = ipairs
-local print = print
-local tostring = tostring
 local unpack = table.unpack
 local time = misc.time
 

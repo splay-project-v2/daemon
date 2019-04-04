@@ -197,7 +197,7 @@ print()
 -- of original, non wrapped, (or non configured) socket functions.
 socket = require"socket.core"
 
-rs = require"splay.restricted_socket"
+rs = require("splay.restricted_socket")
 settings = job.network
 settings.blacklist = job.blacklist
 settings.start_port = job.me.port
@@ -220,6 +220,7 @@ job.code = nil -- to free some memory
 collectgarbage("collect")
 collectgarbage("collect")
 if splay_code_function then
+	print("Execute the code > ")
 	splay_code_function()
 else
 	print("Error loading code:", err)

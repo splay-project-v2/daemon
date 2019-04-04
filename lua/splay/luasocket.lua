@@ -44,13 +44,8 @@ local string = require("string")
 local math = require("math")
 local async_dns=require("splay.async_dns")
 
-local misc=require"splay.misc"
-local log = require"splay.log"
-
-local error = error
-local pairs = pairs
-local print = print
-local assert= assert
+local misc = require("splay.misc")
+local log = require("splay.log")
 
 local _M = {}
 

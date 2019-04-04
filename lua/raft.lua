@@ -3,21 +3,30 @@
 Raft leader election implementation
 
 --]]
+socket = require("socket")
+rs = require("splay.restricted_socket")
+rs.init(settings)
+socket = rs.wrap(socket)
+package.loaded['socket.core'] = socket
+
+-- print(socket.infos())
+
+job = {}
+job.me = {ip = '127.0.0.1', port= tonumber(arg[1])}
+--job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 },{ip= '127.0.0.1', port= 15003 },{ip= '127.0.0.1', port= 15004 },{ip= '127.0.0.1', port= 15005 }}
+job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 }, {ip= '127.0.0.1', port= 15003 }}
+print("Begin Raft : I am "..job.me.ip..":"..job.me.port)
+
 require("splay.base")
 local math = require("math")
 local net = require("splay.net")
 local misc = require("splay.misc")
 
--- JOB definition, normally already define
-job = {}
-job.me = {ip = '127.0.0.1', port= 15001}
-job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 }}
-
 -- Index in the list of nodes -> Send to other of nodes.
 job_index = -1
-for i, n in ipairs(job.nodes) do
+for k, n in pairs(job.nodes) do
     if (job.me.ip == n.ip and job.me.port == n.port) then
-        job_index = i
+        job_index = k
         break
     end
 end
@@ -26,11 +35,10 @@ if (job_index == -1) then
 end
 print("I am the job number "..job_index)
 
-
 -- Minimal timeout for each purpose in second
 election_timeout = 2.0
 rpc_timeout = 0.3
-heartbeat_timeout = 0.5
+heartbeat_timeout = 0.8
 
 -- Constant msg send and receive between nodes
 vote_msg = {req = "VOTEREQ", rep = "VOTEREP"}
@@ -39,7 +47,7 @@ heartbeat_msg = "HEARTBEAT"
 -- State of this node
 state = {
     term = 0,
-    voteFor = nil, -- {ip = ip, port = port} as id
+    voteFor = nil, -- index in the node list
     state = "follower", -- follower, candidat, or leader
     leader = nil, --  {ip = ip, port = port} of the leader
     votes = {}
@@ -48,28 +56,17 @@ state = {
 -- sockets table of each connected node (nil == cot connected to)
 sockets = {}
 
--- Init sockets table
-for i,n in ipairs(job.nodes) do
-    if n.ip ~= job.me.ip or n.port ~= job.me.port then
-        sockets[n.ip..n.port] = nil
-    end
-end
-
 -- Timeout variable (if x_time < misc.time() then trigger the corresponded timeout)
 rpc_time = {}
-election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
-heart_time = misc.time()
+election_time = nil
+heart_time = nil
 
 -- helper functions
-function isLeader(node)
-    if (node and state.leader and node.ip == state.leader.ip and node.port == state.leader.port) then
-        return true
-    else
-        return false
-    end
+function is_leader(job_index)
+    return state.leader == job_index
 end
 
-function setContains(set, key)
+function set_contains(set, key)
     return set[key] ~= nil
 end
 
@@ -78,7 +75,44 @@ function stepdown(term)
     state.term = tonumber(term)
     state.state = "follower"
     state.voteFor = nil
-    election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
+    set_election_timeout()
+end
+
+-- Timeout functions
+function set_election_timeout()
+    election_time = misc.time()
+    local time = election_time
+    events.thread(function ()
+        events.sleep(((math.random() + 1.0) * election_timeout))
+        -- if the timeout is not cancelled
+        if (time == election_time) then
+            trigger_election_timeout()
+        end
+    end)
+end
+
+function set_rpc_timeout(node_index)
+    rpc_time[node_index] = misc.time()
+    local time = rpc_time[node_index]
+    events.thread(function ()
+        events.sleep((math.random() * 0.2) + rpc_timeout)
+        -- if the timeout is not cancelled
+        if (time == rpc_time[node_index] and sockets[node_index] ~= nil) then
+            trigger_rpc_timeout(sockets[node_index])
+        end
+    end)
+end
+
+function set_heart_timeout()
+    heart_time = misc.time()
+    local time = heart_time
+    events.thread(function ()
+        events.sleep(heartbeat_timeout)
+        -- if the timeout is not cancelled
+        if (time == heart_time and is_leader(job_index)) then
+            trigger_heart_timeout()
+        end
+    end)
 end
 
 -- Trigger functions
@@ -86,47 +120,41 @@ function trigger_rpc_timeout(s)
     local ip, port = s:getpeername()
     if (state.state == "candidate") then
         print("Send new rpc timeout for "..ip..":"..port.." - index "..s.job_index)
-        local ip, port = s:getpeername()
-        rpc_time[s.job_index] = misc.time() + (math.random() * 0.2) + rpc_timeout
+        set_rpc_timeout(s.job_index)
         s:send(vote_msg.req.." "..state.term.."\n")
     end
 end
 
 function trigger_election_timeout()
     if (state.state == "follower" or state.state == "candidate") then 
-        election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
+        set_election_timeout()
         state.term = state.term + 1
         state.state = "candidate"
         state.voteFor = job_index
         state.votes = {}
         state.votes[job_index] = true
-        for i, s in ipairs(sockets) do
-            local ip, port = s:getpeername()
-            rpc_time[s.job_index] = misc.time()
+        for k, s in pairs(sockets) do
+            rpc_time[s.job_index] = nil
+            trigger_rpc_timeout(s)
         end
     end
 end
 
-function trigger_hearbeat_timeout(s)
+function trigger_heart_timeout()
     state.term = state.term + 1
-    s:send(heartbeat_msg.." "..state.term.."\n")
-    heart_time = misc.time() + heartbeat_timeout
+    for k, s in pairs(sockets) do
+        if s ~= nil then
+            s:send(heartbeat_msg.." "..state.term.."\n")
+        end
+    end
+    set_heart_timeout()
 end
 
--- Socket fonction
+-- Socket fonctions
 function send(s)
-    local ip, port = s:getpeername()
-    rpc_time[s.job_index] =  misc.time() + (math.random() * 0.2) + rpc_timeout
+    set_rpc_timeout(s)
     while events.yield() do
-        -- RPC Timeout
-        if (not isLeader(job.me) and  rpc_time[s.job_index] ~= nil and rpc_time[s.job_index] < misc.time()) then
-            trigger_rpc_timeout(s)
-        end
-        -- HEARTBEAT Timeout
-        if (isLeader(job.me) and heart_time < misc.time()) then
-            print("Trigger heartbeat timeout for "..ip..":"..port.." - index "..s.job_index)
-            trigger_hearbeat_timeout(s)
-        end
+        events.sleep(3)
     end
 end
 
@@ -153,10 +181,10 @@ function receive(s)
                     end
                     rpc_time[s.job_index] = nil
                     if misc.size(state.votes) > misc.size(job.nodes) /2 then
-                        print("I am the leader")
+                        print("I become the leader")
                         state.state = "leader"
-                        state.leader = job.me
-                        heart_time = misc.time()
+                        state.leader = job_index
+                        trigger_heart_timeout()
                     end
                 end
             elseif table_d[1] == vote_msg.req then
@@ -167,12 +195,12 @@ function receive(s)
                 end
                 if term == state.term and (state.voteFor == nil or state.voteFor == s.job_index) then
                     state.voteFor = s.job_index
-                    election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
+                    set_election_timeout()
                 end
                 s:send(vote_msg.rep.." "..state.term.." "..state.voteFor.."\n")
             elseif table_d[1] == heartbeat_msg then
                 -- HEARBEAT
-                election_time = ((math.random() + 1.0) * election_timeout) + misc.time()
+                set_election_timeout()
                 state.term = tonumber(table_d[2])
             else
                 print("Warning : unkown message"..table_d[1])
@@ -181,25 +209,52 @@ function receive(s)
     end
 end
 
-function init(s, connect)
+function init_client(s, connect)
     -- if connect == true => client 
-    -- If this function returns false, The connection will be closed immediatly
     local ip, port = s:getpeername()
-    if connect then
-        s:send(job_index.."\n")
-        local d = s:receive()
 
-        s.job_index = tonumber(d)
+    print("Connection to: "..ip..":"..port)
 
-        print("connection to: "..ip..":"..port.." - index = "..s.job_index)
-    else
-        local d = s:receive()
-        s:send(job_index.."\n")
-
-        s.job_index = tonumber(d)
-
-        print("connection from: "..ip..":"..port.." - index = "..s.job_index)
+    nb, err = s:send(job_index.."\n")
+    if nb ~= nil then
+        print("Send ME (to) "..nb)
+    else 
+        print("Error"..err)
     end
+
+    local d = s:receive()
+    print("I received "..d)
+
+    s.job_index = tonumber(d)
+
+    print("Success Connection to: "..ip..":"..port.." - index = "..s.job_index)
+
+    if  sockets[s.job_index] ~= nil then
+        print("I am already connect to "..s.job_index )
+        error("Already connect in a other socket")
+    else
+        print("Save socket "..s.job_index.." in the table")
+        sockets[s.job_index] = s
+    end
+end
+
+function init_server(s, connect)
+    local ip, port = s:getpeername()
+    print("Connection from: "..ip..":"..port)
+
+    local d = s:receive()
+    print("I received "..d)
+
+    nb, err = s:send(job_index.."\n")
+    if nb ~= nil then
+        print("Send ME (from) "..nb)
+    else 
+        print("Error"..err)
+    end
+    s.job_index = tonumber(d)
+
+    print("Success connection from: "..ip..":"..port.." - index = "..s.job_index)
+
     if  sockets[s.job_index] ~= nil then
         print("I am already connect to "..s.job_index )
         error("Already connect in a other socket")
@@ -211,21 +266,21 @@ end
 
 function final(s)
     local ip, port = s:getpeername()
-    print("closing: "..ip..":"..port.." - index "..s.job_index)
+    print("Closing: "..ip..":"..port.." - index "..s.job_index)
     sockets[s.job_index] = nil
 end
 
 events.run(function()
     -- Accept connection from other nodes
-    net.server(job.me.port, {initialize = init, send = send, receive = receive, finalize = final})
+    net.server(job.me.port, {initialize = init_server, send = send, receive = receive, finalize = final})
     
     -- Launch connection to each orther node (use the same function than server) (retry every 5 second)
     events.thread(function ()
         while events.yield() do
-            for i,n in ipairs(job.nodes) do
+            for i, n in pairs(job.nodes) do
                 if sockets[i] == nil and i ~= job_index then
-                    print("Try to instanciate connection to "..n.ip..":"..n.port.." - index "..i)
-                    net.client(n, {initialize = init, send = send, receive = receive, finalize = final})
+                    print("Try to begin connection to "..n.ip..":"..n.port.." - index "..i)
+                    net.client(n, {initialize = init_client, send = send, receive = receive, finalize = final})
                 end
             end
             events.sleep(5)
@@ -233,18 +288,11 @@ events.run(function()
     end)
 
     -- Election manage 
-    events.thread(function ()
-        while events.yield() do
-            if (state.state ~= "leader" and election_time < misc.time()) then
-                -- Election Timeout
-                print("Trigger election timeout "..election_time)
-                trigger_election_timeout()
-            end
-        end
-    end)
+    set_election_timeout()
     
     -- Stop after 20 seconds
     events.sleep(20)
-    events.exit() -- rpc.server() is still running...
+    print("Raft exit")
+    events.exit()
 end)
 

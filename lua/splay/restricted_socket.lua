@@ -56,26 +56,20 @@ luasocket shortcuts.
 
 ]]
 
-local base = _G
-
-local socket = require"socket.core" -- needed for dns in blacklist
-local string = require"string"
-local math = require"math"
-local log = require"splay.log"
-
-local pairs = pairs
-local print = print
-local setmetatable = setmetatable
-local tostring = tostring
---local setfenv = setfenv
+local socket = require("socket.core") -- needed for dns in blacklist
+local string = require("string")
+local math = require("math")
+local log = require("splay.log")
+local misc = require("splay.misc")
 
 local _M = {}
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "Restrictions for LuaSocket"
 _M._VERSION     = 1.0
 _M._NAME = "splay.restricted_socket"
---[[ DEBUG ]]--
-local l_o = log.new(3, "[".._M._NAME.."]")
+
+--[[ LOG LEVEL ]]--
+local l_o = log.new(2, "[".._M._NAME.."]")
 
 -- vars
 local total_sent = 0
@@ -98,9 +92,9 @@ local blacklist = {}
 local init_done = false
 function _M.init(settings)
 	if not init_done then
-		init_done = true
-		if not settings then return false, "no settings" end
+		l_o:info("RS init : "..misc.dump(settings))
 
+		if not settings then return false, "no settings" end
 		if settings.max_send then max_send = settings.max_send end
 		if settings.max_receive then max_receive = settings.max_receive end
 		if settings.max_sockets then max_sockets = settings.max_sockets end
@@ -118,7 +112,7 @@ function _M.init(settings)
 		if settings.udp_drop_ratio then
 			udp_drop_ratio = settings.udp_drop_ratio * 1000 -- original value is [0-1]
 		end
-
+		init_done = true
 		return true
 	else
 		return false, "init() already called"
@@ -262,17 +256,10 @@ local function tcp_sock_wrapper(sock)
 			l_o:debug("tcp.connect("..host..", "..tostring(port)..")")
 
 			-- we only authorize our local connection on our port range
-			--if local_ip and host == local_ip then
-			--	if port < start_port or port > end_port then
-			--		l_o:warn("Local connect restricted (port: "..port..") not in job range.")
-			--		return nil, "restricted"
-			--	end
-			--else
-				if not check_blacklist(host) then
-					l_o:warn("Connect restricted (blacklist: "..host..")")
-					return nil, "restricted; blacklist"
-				end
-			--end
+			if not check_blacklist(host) then
+				l_o:warn("Connect restricted (blacklist: "..host..")")
+				return nil, "restricted; blacklist"
+			end
 
 			local s, m = sock:connect(host, port, lip, lport)
 
@@ -429,17 +416,10 @@ local function udp_sock_wrapper(sock)
 			l_o:debug("udp.sendto()")
 
 			-- we only authorize our local connection on our port range
-			--if local_ip and ip == local_ip then
-			--	if port < start_port or port > end_port then
-			--		l_o:warn("Local connect restricted (port: "..port..") not in job range.")
-			--		return nil, "restricted"
-			--	end
-			--else
-				if not check_blacklist(ip) then
-					l_o:warn("Connect restricted (blacklist: "..ip..")")
-					return nil, "restricted"
-				end
-			--end
+			if not check_blacklist(ip) then
+				l_o:warn("Connect restricted (blacklist: "..ip..")")
+				return nil, "restricted"
+			end
 
 			local len = #data
 

@@ -21,15 +21,9 @@ You should have received a copy of the GNU General Public License
 along with Splayd. If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local events = require"splay.events"
-local socket = require"splay.socket"
-local log = require"splay.log"
-
-local pcall = pcall
-local print = print
-local tostring = tostring
-local type = type
-local pairs = pairs
+local events = require("splay.events")
+local socket = require("splay.socket")
+local log = require("splay.log")
 
 local _M = {}
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
