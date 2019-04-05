@@ -9,8 +9,6 @@ rs.init(settings)
 socket = rs.wrap(socket)
 package.loaded['socket.core'] = socket
 
--- print(socket.infos())
-
 job = {}
 job.me = {ip = '127.0.0.1', port= tonumber(arg[1])}
 --job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 },{ip= '127.0.0.1', port= 15003 },{ip= '127.0.0.1', port= 15004 },{ip= '127.0.0.1', port= 15005 }}
