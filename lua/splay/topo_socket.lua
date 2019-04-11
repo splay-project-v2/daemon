@@ -100,7 +100,8 @@ The tree is a n-ary tree, where each node can have 0 to N subtrees.
 local dynamic_tree=tree.new()
 local BW_SHARING="fair"
 
---PROTOCOL OVERHEADS, values from http://sd.wareonearth.com/~phil/net/overhead/ 
+-- PROTOCOL OVERHEADS, values from http://sd.wareonearth.com/~phil/net/overhead/ 
+-- TODO : make a update https://app.netrounds.com/static/2.27/support/defs-notes/theor-thput.html 
 local TCP_OVERHEAD = 0.949285
 local UDP_OVERHEAD = 0.957087
 --[[ CONFIG ]]--
