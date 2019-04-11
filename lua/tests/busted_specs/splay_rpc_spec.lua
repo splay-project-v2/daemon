@@ -1,10 +1,11 @@
 describe("Test Splay RPC", function()
+    _G.pong = function()
+        return "pong"
+    end
     setup(function()
         require"splay.base"
         rpc = require"splay.rpc"
-        function pong()
-            return "pong"
-        end
+        
     end)
     it("- RPC no server", function()
         local finish = false
@@ -20,9 +21,9 @@ describe("Test Splay RPC", function()
     end)
 
     it("- With server rpc", function()
-        --[[ require"splay.base"
+        require"splay.base"
         local rpc = require"splay.rpc"
-       
+        
         local finish = false
         local pong_rep = ""
         local err = nil
@@ -31,8 +32,6 @@ describe("Test Splay RPC", function()
             local port=30001
             local rpc_server_thread = rpc.server(port)
             pong_rep, err= rpc.call("127.0.0.1", port, "pong" )	
-            print(err)
-            print(pong_rep)
             finish = true
             rpc.stop_server(port)
             events.kill(rpc_server_thread)
@@ -40,6 +39,6 @@ describe("Test Splay RPC", function()
 
         assert(pong_rep=="pong")
         assert(err==nil)
-        assert(finish == true) ]]
+        assert(finish == true)
     end)
 end)

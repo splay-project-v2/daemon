@@ -188,7 +188,6 @@ print()
 --file:close()
 
 -----------------------------------------------------------------------------
------------------------------------------------------------------------------
 
 --[[ Restricted Socket ]]--
 
@@ -211,6 +210,11 @@ end
 rs.init(settings)
 
 socket = rs.wrap(socket)
+-----------------------------------------------------------------------------
+
+--[[ Topology Socket ]]--
+
+
 
 -- Replace socket.core, unload the other
 package.loaded['socket.core'] = socket

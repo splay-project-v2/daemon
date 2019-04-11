@@ -199,7 +199,7 @@ function _M.init(settings,nodes,topology,my_pos)
 			return false, "init() already called"
 		end
 end
-function _M.id_from_position(po)
+local function id_from_position(po)
 	for k,v in pairs(global_topology) do
 		l_o:debug("k="..k,"v="..v.position,"po="..po,type(v.position),type(po))
 		if tonumber(po)==v.position then return k end
@@ -222,51 +222,8 @@ local last_event_idx=0
 --when a new upload is starting toward 'node', the tree has to be
 --marked accordingly to check for contention of shared links with 
 --other streams.
-function _M.mark_stream_to(node)
-	local pos_node=tostring(global_topology[node].position)
-	l_o:debug("Marking stream to ",node, "position:",pos_node)
-	local n=dynamic_tree.getnode(pos_node)
-	dynamic_tree.incrementflowto(n,raw_topology)
-	last_event_idx=last_event_idx+1
-	local plus_ev="+ "..table.concat(dynamic_tree.pathtoroot(n)," ")
-	tree_events[last_event_idx]=plus_ev	
-	l_o:debug("Last Added event:", plus_ev)	
-	adjust_rates()
-	l_o:debug("TB Rates adjusted")	
-end
---when an upload toward 'node' finishes, the tree has to be
---marked accordingly to check for contention of shared links with 
---other streams.
-function _M.unmark_stream_to(node)
-	local pos_node=tostring(global_topology[node].position)
-	l_o:debug("UnMarking stream to ",node, "position:",pos_node)
-	local n=dynamic_tree.getnode(pos_node)
-	dynamic_tree.decrementflowto(n, raw_topology)	
-	last_event_idx=last_event_idx+1
-	local less_ev="- "..table.concat(dynamic_tree.pathtoroot(n)," ")
-	tree_events[last_event_idx]=less_ev
-	l_o:debug("Last Added event:", less_ev)
-	adjust_rates()
-	l_o:debug("TB Rates adjusted")
-end
-
-function _M.handle_tree_change_event(tevent)
-	if tevent[1]=="+" then f=dynamic_tree.incrementflowfromto
-	elseif tevent[1]=="-" then f=dynamic_tree.decrementflowfromto
-	else error("Cannot handle tree_change_event:", table.concat(tevent," ")) end
-	local flowdest=tevent[#tevent]
-	table.remove(tevent,1)
-	local flowsource=tevent[1]
-	for i=#tevent,2,-1 do
-		--actual parameters are in reverse order because the for-loop iterates backwardly
-		f(dynamic_tree.getnode(tevent[i]),dynamic_tree.getnode(tevent[i-1]),flowdest, flowsource, raw_topology)		
-	end
-	adjust_rates()
-	l_o:debug("TB Rates adjusted")
-end
-
 --adjust BW rates to LEAVES nodes
-function _M.adjust_rates()
+local function adjust_rates()
 	local leaves=dynamic_tree.leaves()
 	for leaf,v in pairs(leaves) do
 		local lid=id_from_position(leaf)
@@ -293,7 +250,48 @@ function _M.adjust_rates()
 	end
 end
 
+local function mark_stream_to(node)
+	local pos_node=tostring(global_topology[node].position)
+	l_o:debug("Marking stream to ",node, "position:",pos_node)
+	local n=dynamic_tree.getnode(pos_node)
+	dynamic_tree.incrementflowto(n,raw_topology)
+	last_event_idx=last_event_idx+1
+	local plus_ev="+ "..table.concat(dynamic_tree.pathtoroot(n)," ")
+	tree_events[last_event_idx]=plus_ev	
+	l_o:debug("Last Added event:", plus_ev)	
+	adjust_rates()
+	l_o:debug("TB Rates adjusted")	
+end
+--when an upload toward 'node' finishes, the tree has to be
+--marked accordingly to check for contention of shared links with 
+--other streams.
+local function unmark_stream_to(node)
+	local pos_node=tostring(global_topology[node].position)
+	l_o:debug("UnMarking stream to ",node, "position:",pos_node)
+	local n=dynamic_tree.getnode(pos_node)
+	dynamic_tree.decrementflowto(n, raw_topology)	
+	last_event_idx=last_event_idx+1
+	local less_ev="- "..table.concat(dynamic_tree.pathtoroot(n)," ")
+	tree_events[last_event_idx]=less_ev
+	l_o:debug("Last Added event:", less_ev)
+	adjust_rates()
+	l_o:debug("TB Rates adjusted")
+end
 
+function _M.handle_tree_change_event(tevent)
+	if tevent[1]=="+" then f=dynamic_tree.incrementflowfromto
+	elseif tevent[1]=="-" then f=dynamic_tree.decrementflowfromto
+	else error("Cannot handle tree_change_event:", table.concat(tevent," ")) end
+	local flowdest=tevent[#tevent]
+	table.remove(tevent,1)
+	local flowsource=tevent[1]
+	for i=#tevent,2,-1 do
+		--actual parameters are in reverse order because the for-loop iterates backwardly
+		f(dynamic_tree.getnode(tevent[i]),dynamic_tree.getnode(tevent[i-1]),flowdest, flowsource, raw_topology)		
+	end
+	adjust_rates()
+	l_o:debug("TB Rates adjusted")
+end
 
 --[[
  Create a Topology emulation layer around a true UDP socket.
@@ -418,7 +416,7 @@ local function udp_sock_wrapper(sock)
 				
 				local ris, err = nil
 				local sent=false
-				--local w0=misc.time()
+				local w0=misc.time()
 				--local ok, r = coroutine.yield("event:sleep", expected_upload_time)
 				--ris,err=sock:sendto(data,ip,port)
 				while not sent do --
@@ -441,8 +439,8 @@ local function udp_sock_wrapper(sock)
 					end				
 					local ok, r = coroutine.yield("event:sleep", 1) --wait next clock tic for more tokens...					
 				end
-				--local w1=misc.time()
-				--local eff_upload_time=w1-w0
+				local w1=misc.time()
+				local eff_upload_time=w1-w0
 				l_o:debug("udp.sendto() ideal upload_time:",expected_upload_time," effective_upload_time:",eff_upload_time,"RATIO UP_EFF/UP_IDEAL:",(eff_upload_time/expected_upload_time))
 				return ris, err
 			else
