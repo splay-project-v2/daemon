@@ -43,14 +43,14 @@ local tonumber = tonumber
 local type = type
 local unpack = table.unpack
 
---module("splay.rpc")
 local _M={}
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "Remote Procedure Call over TCP"
 _M._VERSION     = 1.0
+_M._NAME = "splay.rpc"
 
 --[[ DEBUG ]]--
-local l_o = log.new(1, "[splay.rpc]")
+local l_o = log.new(2, "[".._M._NAME.."]")
 
 _M.settings = {
 	max = nil, -- max outgoing RPCs

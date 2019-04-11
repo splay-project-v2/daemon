@@ -41,9 +41,6 @@ local function testDirectory(folder_regex)
     end
 end
 
-testDirectory("./tests/consistency_pass/*.lua")
--- testDirectory("performance_pass/*.lua")
--- testDirectory("consistency_fail/*.lua")
--- testDirectory("performance_fail/*.lua")
+testDirectory("./tests/manual_tests/manual_test_success/*.lua")
 
 print("Fail : "..fail.."/"..total)

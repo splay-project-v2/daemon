@@ -71,9 +71,10 @@ local unpack=table.unpack
 local assert = assert
 
 _M = {}
+_M._NAME = "splay.topo_socket"
 
 --[[ DEBUG ]]--
-local l_o = log.new(1, "[".._NAME.."]")
+local l_o = log.new(2, "[".._M._NAME.."]")
 
 local in_delay=0
 local out_delay=0
@@ -135,11 +136,11 @@ function _M.init(settings,nodes,topology,my_pos)
 				TB_RATE = settings.TB_RATE
 			end
 			
-			
 			local total_bw_out=0
+			global_topology={}
 			if topology then
 				raw_topology=misc.dup(topology) --save it for later
-				global_topology={}
+				
 				for k,t in pairs(topology) do
 					l_o:debug("Topology infos (pos:"..k..",ip:"..nodes[tonumber(k)].ip..",port:"..nodes[tonumber(k)].port.."):")
 					for dst,infos in pairs(t) do
@@ -688,13 +689,6 @@ local function tcp_sock_wrapper(sock)
 	if sock.close then
 		new_sock.close = function(self)
 			l_o:debug("tcp.close()")
-
-			if not sock:getsockname() then
-				l_o:notice("Closing an already closed socket.")
-			else
-				l_o:debug("Peer closed, total TCP sockets: "..total_tcp_sockets)
-				sock:close()
-			end
 		end
 	end
 

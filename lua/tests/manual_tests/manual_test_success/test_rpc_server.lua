@@ -1,19 +1,23 @@
 require"splay.base"
-local splay = require("socket")
 local rpc = require"splay.rpc"
 function pong()
-	return "pong1"
+	return "pong"
 end
-success = false
+local finish = false
+local pong_rep = ""
+local err = nil
 
 events.run(function()
 	local port=30001
 	local rpc_server_thread = rpc.server(port)
-	local pong_rep, err= rpc.call({ip="127.0.0.1",port=port}, {"pong"})	
-	assert(pong_rep=="pong1")
-	assert(err==nil)
-	success = true
+	pong_rep, err= rpc.call("127.0.0.1", port, "pong" )	
+	print(err)
+	print(pong_rep)
+	finish = true
+	rpc.stop_server(port)
 	events.kill(rpc_server_thread)
 end)
 
-assert(success == true)
+assert(pong_rep=="pong")
+assert(err==nil)
+assert(finish == true)
