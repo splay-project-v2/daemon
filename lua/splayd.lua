@@ -392,9 +392,7 @@ function register(so)
 	local s = splayd.settings.job
 	local job_json=assert(so:receive())
 
-	-- print("job_json received "..#job_json.." : "..job_json)
 	local job = json.decode(job_json)
-	-- print("job_json decoded")
 	local ref = job.ref
 	
 	if splayd.jobs[ref] then
@@ -429,11 +427,8 @@ function register(so)
 
 	-- No more INVALID_CODE error
 	-- We will always execute some code (even empty), to create some logs
-	if job.code and job.code == "" then
-          job.code = nil
-        else
-          job.code = job.code:gsub('\\', '')
-        end
+	if job.code and job.code == "" then job.code = nil end
+
 	if job.script and job.script == "" then job.script = nil end
 	if not job.code and not job.script then
 		job.code = ""
