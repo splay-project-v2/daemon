@@ -3,7 +3,9 @@
 Raft leader election implementation
 
 --]]
-socket = require("socket")
+
+-- FOR local test - without splay
+--[[ socket = require("socket")
 rs = require("splay.restricted_socket")
 rs.init(settings)
 socket = rs.wrap(socket)
@@ -12,7 +14,8 @@ package.loaded['socket.core'] = socket
 job = {}
 job.me = {ip = '127.0.0.1', port= tonumber(arg[1])}
 --job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 },{ip= '127.0.0.1', port= 15003 },{ip= '127.0.0.1', port= 15004 },{ip= '127.0.0.1', port= 15005 }}
-job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 }, {ip= '127.0.0.1', port= 15003 }}
+job.nodes = {{ip= '127.0.0.1', port= 15001 }, {ip= '127.0.0.1', port= 15002 }, {ip= '127.0.0.1', port= 15003 }} ]]
+
 print("Begin Raft : I am "..job.me.ip..":"..job.me.port)
 
 require("splay.base")
@@ -207,52 +210,25 @@ function receive(s)
     end
 end
 
-function init_client(s, connect)
+function init(s, connect)
     -- if connect == true => client 
+    -- If this function returns false, The connection will be closed immediatly
     local ip, port = s:getpeername()
+    if connect then
+        s:send(job_index.."\n")
+        local d = s:receive()
 
-    print("Connection to: "..ip..":"..port)
+        s.job_index = tonumber(d)
 
-    nb, err = s:send(job_index.."\n")
-    if nb ~= nil then
-        print("Send ME (to) "..nb)
-    else 
-        print("Error"..err)
-    end
-
-    local d = s:receive()
-    print("I received "..d)
-
-    s.job_index = tonumber(d)
-
-    print("Success Connection to: "..ip..":"..port.." - index = "..s.job_index)
-
-    if  sockets[s.job_index] ~= nil then
-        print("I am already connect to "..s.job_index )
-        error("Already connect in a other socket")
+        print("connection to: "..ip..":"..port.." - index = "..s.job_index)
     else
-        print("Save socket "..s.job_index.." in the table")
-        sockets[s.job_index] = s
+        local d = s:receive()
+        s:send(job_index.."\n")
+
+        s.job_index = tonumber(d)
+
+        print("connection from: "..ip..":"..port.." - index = "..s.job_index)
     end
-end
-
-function init_server(s, connect)
-    local ip, port = s:getpeername()
-    print("Connection from: "..ip..":"..port)
-
-    local d = s:receive()
-    print("I received "..d)
-
-    nb, err = s:send(job_index.."\n")
-    if nb ~= nil then
-        print("Send ME (from) "..nb)
-    else 
-        print("Error"..err)
-    end
-    s.job_index = tonumber(d)
-
-    print("Success connection from: "..ip..":"..port.." - index = "..s.job_index)
-
     if  sockets[s.job_index] ~= nil then
         print("I am already connect to "..s.job_index )
         error("Already connect in a other socket")
@@ -270,7 +246,7 @@ end
 
 events.run(function()
     -- Accept connection from other nodes
-    net.server(job.me.port, {initialize = init_server, send = send, receive = receive, finalize = final})
+    net.server(job.me.port, {initialize = init, send = send, receive = receive, finalize = final})
     
     -- Launch connection to each orther node (use the same function than server) (retry every 5 second)
     events.thread(function ()
@@ -278,7 +254,7 @@ events.run(function()
             for i, n in pairs(job.nodes) do
                 if sockets[i] == nil and i ~= job_index then
                     print("Try to begin connection to "..n.ip..":"..n.port.." - index "..i)
-                    net.client(n, {initialize = init_client, send = send, receive = receive, finalize = final})
+                    net.client(n, {initialize = init, send = send, receive = receive, finalize = final})
                 end
             end
             events.sleep(5)
