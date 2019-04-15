@@ -40,8 +40,8 @@ do
 	local p = print
 	print = function(...)
 		--p(...)
-		local s, u = misc.time()
-		p(s, u, ...) --local timestamp, used when controller configured with UseSplaydTimestamps
+		local s = misc.time()
+		p(s, ...) --local timestamp, used when controller configured with UseSplaydTimestamps
 		io.flush()
 	end
 end
@@ -188,7 +188,6 @@ print()
 --file:close()
 
 -----------------------------------------------------------------------------
------------------------------------------------------------------------------
 
 --[[ Restricted Socket ]]--
 
@@ -197,7 +196,7 @@ print()
 -- of original, non wrapped, (or non configured) socket functions.
 socket = require"socket.core"
 
-rs = require"splay.restricted_socket"
+rs = require("splay.restricted_socket")
 settings = job.network
 settings.blacklist = job.blacklist
 settings.start_port = job.me.port
@@ -211,6 +210,11 @@ end
 rs.init(settings)
 
 socket = rs.wrap(socket)
+-----------------------------------------------------------------------------
+
+--[[ Topology Socket ]]--
+
+
 
 -- Replace socket.core, unload the other
 package.loaded['socket.core'] = socket
@@ -220,6 +224,7 @@ job.code = nil -- to free some memory
 collectgarbage("collect")
 collectgarbage("collect")
 if splay_code_function then
+	print("Execute the code > ")
 	splay_code_function()
 else
 	print("Error loading code:", err)

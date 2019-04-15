@@ -1,49 +1,49 @@
-FROM ubuntu:18.04
-LABEL Description="Splay - Daemon - daemon act as a node in the splay-project capable perform jobs"
+FROM alpine:3.9.2
 
-RUN mkdir -p /usr/splay/lib/c
-RUN mkdir -p /usr/splay/lib/lua
+RUN apk add --update --no-cache \ 
+    readline-dev libc-dev make gcc wget zip git unzip outils-md5 \
+    openssl openssl-dev \
+    lua5.3 lua5.3-dev
 
-WORKDIR /usr/splay
+ENV LUAROCKS_VERSION 3.0.4
 
-RUN apt-get update && apt-get -y --no-install-recommends install \
-    build-essential openssl libssl1.0 lua5.3 liblua5.3-0 liblua5.3-dev
-# Due to a bug of lua 5.3 package where the symbol link is not create
-RUN update-alternatives --install /usr/bin/lua lua /usr/bin/lua5.3 10
-RUN update-alternatives --install /usr/bin/luac luac /usr/bin/luac5.3 10
+RUN wget https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VERSION}.tar.gz -O - | tar -xzf -
+WORKDIR /luarocks-$LUAROCKS_VERSION
+RUN ./configure; make build; make install
+WORKDIR /
+RUN rm -rf /luarocks-$LUAROCKS_VERSION
 
-RUN apt-get update && apt-get -y --no-install-recommends install lua-socket lua-socket-dev lua-sec
+RUN luarocks install luasocket 
+RUN luarocks install luaossl
+RUN luarocks install LuaSec
 
-ENV L_PATH  "/usr/splay/lib/lua"
-ENV L_CPATH "/usr/splay/lib/c"
+# For testing
+RUN luarocks install busted
 
-ADD certificats/*.cnf ./
-ADD bash/*.sh ./
-ADD c/*.c ./
-ADD c/*.h ./
-ADD c/so_module ./
-ADD c/c_exec ./
-ADD c/Makefile ./
-ADD lua/*.lua ./
-ADD lua/modules ./modules 
-ADD lua/tests ./lua_tests
 
+# Installation of splay itself
+WORKDIR /app
+
+## C modules
+### Make so files and executable jobs and splayd
+COPY c/ ./
+
+RUN mkdir -p ./splay
 RUN make all
 
-RUN export LUA_PATH=$(lua -e 'print(package.path)') ;\
-    export LUA_PATH="${LUA_PATH};/usr/splay/lib/lua/?.lua" ;\
-    export LUA_CPATH=$(lua -e 'print(package.cpath)');\
-    export LUA_CPATH="${LUA_CPATH};/usr/splay/lib/c/?.so" ;\
-    ./install.sh
+### Clean src 
+RUN rm -f ./*.o ./*.c ./*.h && \ 
+    rm -fr ./lbase64 && \
+    rm -f misc_core.so data_bits_core.so
 
-RUN chmod +x ./clean_src.sh ; \
-    ./clean_src.sh
+## Lua Module
+COPY lua/ ./
+COPY lua/splay/ ./splay
 
-# Not very useful for now
-RUN export LUA_PATH=$(lua -e 'print(package.path)') ;\
-    export LUA_PATH="${LUA_PATH};/usr/splay/lib/lua/?.lua" ;\
-    export LUA_CPATH=$(lua -e 'print(package.cpath)');\
-    export LUA_CPATH="${LUA_CPATH};/usr/splay/lib/c/?.so" ;\
-    cd ./lua_tests && lua all_tests.lua
+## Launch Testing to verify the installation
+COPY lua/tests ./
+RUN busted ./busted_specs
 
+## Deploy script 
+COPY ./deploy.sh ./
 CMD ["./deploy.sh"]
