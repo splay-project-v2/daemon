@@ -212,7 +212,13 @@ rs.init(settings)
 socket = rs.wrap(socket)
 -----------------------------------------------------------------------------
 
---[[ Topology Socket ]]--
+--[[ Topology Socket - SplayNet ]]--
+if job.topology then
+	local ts = require"splay.topo_socket"
+	-- settings : empty table, can be choose by user ? 
+	assert(ts.init({}, job.nodes, job.topology, job.position))
+	socket=ts.wrap(socket)
+end
 
 
 
