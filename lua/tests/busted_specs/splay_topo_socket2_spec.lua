@@ -24,10 +24,6 @@ describe("Test Splay Topology socket - 2", function()
         local net = require("splay.net")
         local misc = require("splay.misc")
 
-
-        local final_time_1_to_2 = 0
-        local final_time_2_to_1 = 0
-
         local rtt = 0
         local t_end = 0
 
