@@ -1,4 +1,4 @@
-FROM alpine:3.9.2
+FROM alpine:3.9
 
 RUN apk add --update --no-cache \ 
     readline-dev libc-dev make gcc wget zip git unzip outils-md5 \
