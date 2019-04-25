@@ -43,12 +43,12 @@ describe("Test Splay Topology socket - 2", function()
 
             events.sleep(del_1_to_2 * 4)
 
-            final_time = t_end - start
-            print(final_time)
+            rtt = t_end - start
+            print(rtt)
 
             events.kill(u.server)
         end)
 
-        assert.True(final_time >= 2 * del_1_to_2)
+        assert.True(rtt >= 2 * del_1_to_2)
     end)
 end)
