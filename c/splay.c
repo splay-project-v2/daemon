@@ -95,8 +95,8 @@ int sp_endian(lua_State *L)
 int sp_fork(lua_State *L)
 {
 	int pid = fork();
-	if (pid == -1) {
-		lua_pushnil(L);
+	if (pid < 0) { // Negatif pid => Error
+		lua_pushnumber(L, pid);
 		lua_pushfstring(L, "Fork problem: %s", strerror(errno));
 		lua_pushnumber(L, errno);
 		return 3;

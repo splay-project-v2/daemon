@@ -82,7 +82,7 @@ static const luaL_Reg splayd[] =
 
 int sp_set_max_mem(lua_State *L)
 {
-    if (lua_isnumber(L, 1)) {
+  if (lua_isnumber(L, 1)) {
 		max_mem = lua_tonumber(L, 1);
 	} else {
 		lua_pushnil(L);

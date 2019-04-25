@@ -181,51 +181,41 @@ function start(ref)
 
 	-- we release the ports we have locked for this job
 	if job.network.nb_ports > 0 then
-		splay.release_ports(job.me.port,
-				job.me.port + job.network.nb_ports - 1)
+		splay.release_ports(job.me.port, job.me.port + job.network.nb_ports - 1)
 	end
 
 	local pid, err, err_code = splay.fork()
 
-	if pid ~= nil then
-
-		if pid > 0 then -- splayd
-
-			job.pid = pid
-			job.status = "running"
-			job.start_time = os.time()
-
-		else -- jailer (forked)
-
-			-- WARNING: if both script and code are executed, job will only
-			-- watch lua (code) and kill will only kill lua (code).
-			-- We will need a new fork...
-			if job.code and job.script and exec_script then
-				pid, err, err_code = splay.fork()
-				if pid ~= nil then
-					if pid > 0 then
-						-- Important to run the job here because splayd is watching only
-						-- this pid !
-						start_job(job, ref)
-					else
-						start_job(job, ref, true)
-					end
-				else
-					print("2nd fork error: "..err, err_code)
-					os.exit()
-				end
-			else -- or not
-				if job.code then
-					start_job(job, ref)
-				end
-				if job.script and exec_script then
-					start_job(job, ref, true)
-				end
+	if pid > 0 then -- splayd (parent process) 
+		job.pid = pid
+		job.status = "running"
+		job.start_time = os.time()
+	elseif pid == 0 then -- jailer (forked)
+		-- WARNING: if both script and code are executed, job will only
+		-- watch lua (code) and kill will only kill lua (code).
+		-- We will need a new fork...
+		if job.code and job.script and exec_script then
+			pid, err, err_code = splay.fork()
+			if pid == 0 then
+				start_job(job, ref, true)
+			elseif pid > 0 then
+				-- Important to run the job here because splayd is watching only
+				-- this pid !
+				start_job(job, ref)
+			else
+				print("2nd fork error: "..err, err_code)
+				os.exit()
 			end
-			-- In any case, this process will die (security)
-			os.exit()
+		else -- or not
+			if job.code then
+				start_job(job, ref)
+			elseif job.script and exec_script then
+				start_job(job, ref, true)
+			end
 		end
-	else
+		-- In any case, this process will die (security)
+		os.exit()
+	else -- Error in the fork
 		print("Fork error: "..err, err_code)
 		os.exit()
 	end
@@ -908,7 +898,7 @@ function test(so)
 	local pid = splay.fork()
 	local s
 
-	if pid <= 0 then -- job
+	if pid == 0 then -- job
 		print("FORK")
 		s = nil
 

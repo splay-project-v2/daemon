@@ -66,7 +66,7 @@ if not f then
 	print("Error reading job data")
 	os.exit()
 end
---print(f:read("*a"))
+
 job = json.decode(f:read("*a"))
 f:close()
 
