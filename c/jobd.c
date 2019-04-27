@@ -47,53 +47,6 @@
 
 #include "compmod.h"
 
-
-/*
- * For futur use, we could maybe control memory of loaded shared libraries
- * throught these interceptors
- *
- * The  Unix98 standard requires malloc(), calloc(), and realloc() to set errno
- * to ENOMEM upon failure.  Glibc assumes that this is done (and the glibc
- * versions of these routines do this); if you use a private malloc
- * implementation that  does  not  set  errno, then certain library routines may
- * fail without having a reason in errno.
-
-#include <dlfcn.h>
-
-void free(void *ptr)
-{
-	static void (*func)();
-	if(!func) {
-		func = (void (*)()) dlsym(RTLD_NEXT, "free");
-	}
-	fprintf(stdout, "free is called\n");     
-	fflush(stdout);
-	return(func(ptr));
-}
-
-void *malloc(size_t size)
-{
-	static void * (*func)();
-	if(!func) {
-		func = (void *(*)()) dlsym(RTLD_NEXT, "malloc");
-	}
-	fprintf(stdout, "malloc(%d) is called\n", size);     
-	fflush(stdout);
-	return(func(size));
-}
-
-void *realloc(void *ptr, size_t size)
-{
-	static void * (*func)();
-	if(!func) {
-		func = (void *(*)()) dlsym(RTLD_NEXT, "realloc");
-	}
-	fprintf(stdout, "realloc(%d) is called\n", size);     
-	fflush(stdout);
-	return(func(ptr, size));
-}
-*/
-
 int pid = 0;
 
 void sighandler_term(int s) {

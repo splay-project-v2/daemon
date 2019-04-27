@@ -1,10 +1,11 @@
 # Tested only on ubuntu 18.04 contenair
+MKDIR_P = mkdir -p
 
 CC= gcc
 
 INCLUDE= -I/usr/include/lua5.3
 
-LIBS= -L/usr/lib/lua5.3/ -llua -lm
+LIBS= -L/usr/lib/lua5.3/ -llua5.3 -lm
 OPENSSL_LIBS= -L/usr/local/openssl/lib -lssl
 
 CFLAGS= -Wall -O2 -pedantic $(INCLUDE)
@@ -14,7 +15,10 @@ CERTIFICATS_PATH=./certificats
 
 .PHONY: all, clean
 
-all: splayd jobd so_module cert
+all: directories splayd jobd so_module cert
+
+directories: 
+	$(MKDIR_P) splay
 
 clean:
 	rm -f *.o *.so
@@ -22,7 +26,7 @@ clean:
 	rm -f *.pem *.srl
 	rm -f splayd jobd
 	rm -f lbase64/*.o
-	rm -rf splay/
+	rm -f splay/*.so
 
 cert:
 	openssl req -newkey rsa:1024 -sha1 -keyout rootkey.pem -out rootreq.pem \

@@ -34,9 +34,6 @@ int sp_exec(lua_State *L);
 int sp_kill(lua_State *L);
 int sp_alive(lua_State *L);
 int sp_mkdir(lua_State *L);
-/* int sp_check_ports(lua_State *L); */
-/* int sp_reserve_ports(lua_State *L); */
-/* int sp_free_ports(lua_State *L); */
-/* int sp_next_free_ports(lua_State *L); */
+int sp_get_status_process(lua_State *L);
 
 #endif /* SPLAY_H */

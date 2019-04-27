@@ -54,6 +54,7 @@ static const luaL_reg sp_funcs[] =
 	{"kill", sp_kill},
 	{"alive", sp_alive},
 	{"mkdir", sp_mkdir},
+	{"get_status_process", sp_get_status_process},
 	{NULL, NULL}
 };
 
@@ -92,16 +93,34 @@ int sp_endian(lua_State *L)
 	return 1;
 }
 
+int sp_get_status_process(lua_State *L) {
+	if (lua_isnumber(L, 1)) {
+		pid_t pid = lua_tointeger(L, 1);
+		int status;
+		if (waitpid(pid, &status, 0) == -1) {
+			luaL_error(L, "error waitpid");
+			return 0;
+		} else {
+			lua_pushinteger(L, WEXITSTATUS(status));
+			return 1;
+		}
+	} else {
+		lua_pushnil(L);
+		lua_pushstring(L, "get_status_process(pid) requires an int");
+		return 2;
+	}
+}
+
 int sp_fork(lua_State *L)
 {
 	int pid = fork();
 	if (pid < 0) { // Negatif pid => Error
-		lua_pushnumber(L, pid);
+		lua_pushinteger(L, pid);
 		lua_pushfstring(L, "Fork problem: %s", strerror(errno));
 		lua_pushnumber(L, errno);
 		return 3;
 	}
-	lua_pushnumber(L, pid);
+	lua_pushinteger(L, pid);
 	return 1;
 }
 
@@ -127,77 +146,6 @@ int sp_exec(lua_State *L)
 	return 0;
 }
 
-/*int sp_fork_pipe(lua_State *L)*/
-/*{*/
-/*    int pfd[2], pid;*/
-
-/*     if (pipe(pfd) == -1) {*/
-/*        lua_pushnil(L);*/
-/*        lua_pushfstring(L, "Pipe problem: %s", strerror(errno));*/
-/*        lua_pushnumber(L, errno);*/
-/*        return 3;*/
-/*    }*/
-
-/*   pid = fork();*/
-
-/*   if (pid == -1) { */
-/*        lua_pushnil(L);*/
-/*        lua_pushfstring(L, "Fork problem: %s", strerror(errno));*/
-/*        lua_pushnumber(L, errno);*/
-/*        return 3;*/
-/*    }*/
-
-/*   if (pid == 0) {				|+ Child reads from pipe +|*/
-/*        close(pfd[1]);			|+ Close unused write end +|*/
-/*        lua_pushnumber(L, pid);*/
-/*        lua_pushnumber(L, pfd[0]);*/
-/*        return 2;*/
-/*   } else {            |+ Parent writes to pipe +|*/
-/*        close(pfd[0]);          |+ Close unused read end +|*/
-/*        lua_pushnumber(L, pid);*/
-/*        lua_pushnumber(L, pfd[1]);*/
-/*        return 2;*/
-/*   }*/
-/*}*/
-
-/*int sp_write_pipe(lua_State *L)*/
-/*{*/
-/*    int pfd;*/
-/*    char* data;*/
-
-/*    if (lua_isnumber(L, 1) && lua_isstring(L, 2)) {*/
-/*        pfd = lua_tonumber(L, 1);*/
-/*        data = lua_tostring(L, 2);*/
-
-/*    } else {*/
-/*        lua_pushnil(L);*/
-/*        lua_pushstring(L, "write_pipe(pfd, data) requires an int and a string.");*/
-/*        return 2;*/
-/*    }*/
-
-/*    write(pdf, data);*/
-/*    lua_pushboolean(L, 1);*/
-/*    return 1;*/
-/*}*/
-
-/*int sp_read_pipe(lua_State *L)*/
-/*{*/
-/*    int pfd;*/
-/*    char* data;*/
-
-/*    if (lua_isnumber(L, 1)) {*/
-/*        pfd = lua_tonumber(L, 1);*/
-/*    } else {*/
-/*        lua_pushnil(L);*/
-/*        lua_pushstring(L, "read_pipe(pfd, data) requires an int.");*/
-/*        return 2;*/
-/*    }*/
-
-/*    data = read(pdf);*/
-/*    lua_pushstring(L, data);*/
-/*    return 1;*/
-/*}*/
-
 int sp_kill(lua_State *L)
 {
 	pid_t pid, pid2;
@@ -205,7 +153,7 @@ int sp_kill(lua_State *L)
 	int type = SIGTERM;
 
 	if (lua_isnumber(L, 1)) {
-		pid = lua_tonumber(L, 1);
+		pid = lua_tointeger(L, 1);
 	} else {
 		lua_pushnil(L);
 		lua_pushstring(L, "kill(pid) requires an int.");

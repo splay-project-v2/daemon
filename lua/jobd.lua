@@ -220,8 +220,6 @@ if job.topology then
 	socket=ts.wrap(socket)
 end
 
-
-
 -- Replace socket.core, unload the other
 package.loaded['socket.core'] = socket
 
@@ -229,9 +227,20 @@ splay_code_function, err = load(job.code, "job code")
 job.code = nil -- to free some memory
 collectgarbage("collect")
 collectgarbage("collect")
-if splay_code_function then
-	print("Execute the code > ")
+
+if not splay_code_function then 
+	print("Error loading code:", err)
+end
+
+pid = splay.fork()
+
+if (pid < 0) then 
+	error("Error Fork (JOBD)")
+elseif (pid  == 0) then
+	print("Execute the lua code > ")
 	splay_code_function()
 else
-	print("Error loading code:", err)
+	print("Wait the end of user code")
+	status = splay.get_status_process(pid)
+	print("User code finish with the status code = "..status)
 end
