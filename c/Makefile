@@ -5,7 +5,7 @@ CC= gcc
 
 INCLUDE= -I/usr/include/lua5.3
 
-LIBS= -L/usr/lib/lua5.3/ -llua5.3 -lm
+LIBS= -L/usr/lib/lua5.3/ -llua -lm
 OPENSSL_LIBS= -L/usr/local/openssl/lib -lssl
 
 CFLAGS= -Wall -O2 -pedantic $(INCLUDE)
