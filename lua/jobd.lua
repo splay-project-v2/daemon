@@ -247,18 +247,16 @@ local function run_user_code()
 		collectgarbage("collect")
 		collectgarbage("collect")
 
-		print("Execute the user lua code > ")
+		print("EXECUTE USER LUA CODE (job = "..job.position..")")
 		splay_code_function()
 	else
 		status = splay.get_status_process(pid)
-		print("User code finish with the status code = "..status)
 		if status == 65 then -- Crash point Recovery
-			print("RECOVERY Crash point : rerun")
-			splay.sleep(0.1)
-			run_user_code()
+			print("RECOVERY CRASH : Rerun job "..job.position)
 			-- Relaunch this function
+			run_user_code()
 		elseif status == 66 then -- Crash point Stop
-			print("STOP Crash point : finish  the process")
+			print("STOP CRASH : Terminate job "..job.position)
 			-- Do nothing = stop 
 		end
 	end
