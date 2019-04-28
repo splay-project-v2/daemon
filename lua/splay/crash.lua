@@ -2,8 +2,8 @@ local log = require("splay.log")
 local misc = require("splay.misc")
 
 local _M = {}
-_M._NAME = "splay.lbinenc"
-local l_o = log.new(1, "[".._M._NAME.."]")
+_M._NAME = "splay.crash"
+local l_o = log.new(3, "[".._M._NAME.."]")
 
 -- Crash by id
 local crash_table = {}
@@ -34,13 +34,13 @@ local p_id_splayd = "^(.-):(.+)"
 
 -- Type patterns
 local p_type = "^%s*(%u+)%s*(.+)"
-local p_type_recovery = "^%s*(%d+)%s*(.+)"
+local p_type_recovery = "^%s*(.-)%s*(:.+)"
 
 -- When patterns
 local p_when_type = "^%s*:%s*(%u+)%s*(.*)"
 
 local p_when_after = "^%s*(%d+)"
-local p_when_random = "^%s*(.-)%s*"
+local p_when_random = "^%s*(.+)"
 
 --
 local function concerned(job, id_splayd) 
@@ -101,7 +101,8 @@ local function parse_line(line, job, i_line)
             local id = add_crash("STOP", nil, when)
             -- Change the line
             l_o:info("Crash point add - id = "..id.." : "..misc.dump(crash_table[id]))
-            return "crash.crash_point("..id..")"
+            return "splay_crash.crash_point("..id..")"
+
         elseif type == "RECOVERY" then
             local time_to_wait, line = string.match(line, p_type_recovery)
             time_to_wait = tonumber(time_to_wait) 
@@ -111,7 +112,7 @@ local function parse_line(line, job, i_line)
             local id = add_crash("RECOVERY", time_to_wait, when)
             -- Change the line
             l_o:info("Crash point add - id = "..id.." : "..misc.dump(crash_table[id]))
-            return "crash.crash_point("..id..")"
+            return "splay_crash.crash_point("..id..")"
         else 
             l_o:warning("Type "..type.." of crash is unknown : line "..i_line.." ignored")
         end
@@ -144,7 +145,35 @@ end
 
 -- Crash the code (no rerun)
 function _M.crash_point(id)
+    l_o:debug("check crash point")
 
+    crash = crash_table[id]
+    exit = false
+    -- When check
+    if crash.when.type == "AFTER" then
+        crash.when.data = crash.when.data - 1
+        if crash.when.data == 0 then
+            exit = true
+        end
+    elseif crash.when.type == "RANDOM" then 
+        if math.random() < crash.when.data then
+            exit = true
+        end
+    elseif crash.when.type == "IMMEDIATELY" then
+        exit = true
+    end
+    -- Exit if needed
+    if exit then 
+        l_o:debug("Crash now")
+        if crash.type == "STOP" then
+            os.exit(66)
+        elseif crash.type == "RECOVERY" then
+            splay.sleep(crash.data_type)
+            os.exit(65)
+        else
+            error("I don't know this type of crash : "..crash.type)
+        end
+    end
 end
 
 return _M

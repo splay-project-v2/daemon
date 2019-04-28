@@ -1,6 +1,6 @@
 describe("Test Splay fork and status code of the child process", function()
     it("...", function()
-        splay = require"splay"
+        local splay = require"splay"
 
         exit_code = 25
         pid = splay.fork()

@@ -223,22 +223,30 @@ end
 -- Replace socket.core, unload the other
 package.loaded['socket.core'] = socket
 
-splay_code_function, err = load(job.code, "job code")
-job.code = nil -- to free some memory
-
-if not splay_code_function then 
-	print("Error loading code:", err)
-end
+-- load crash module
+splay_crash = require("splay.crash")
 
 local function run_user_code()
-	collectgarbage("collect")
-	collectgarbage("collect")
+	
 
 	pid = splay.fork()
 
 	if (pid < 0) then 
 		error("Error Fork (JOBD)")
 	elseif (pid  == 0) then
+		-- Before parse for crash point
+		job.code = splay_crash.parse_code(job.code, job)
+
+		splay_code_function, err = load(job.code, "job code")
+		job.code = nil -- to free some memory
+
+		if not splay_code_function then 
+			print("Error loading code:", err)
+			error("Error loading code : "..err)
+		end
+		collectgarbage("collect")
+		collectgarbage("collect")
+
 		print("Execute the user lua code > ")
 		splay_code_function()
 	else

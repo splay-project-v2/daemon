@@ -69,7 +69,7 @@ LUA_API int luaopen_splay_core(lua_State *L)
 int sp_sleep(lua_State *L)
 {
 	if (lua_isnumber(L, 1)) {
-		sleep(lua_tonumber(L, 1));
+		usleep(1000000*lua_tonumber(L, 1));
 	}
 	return 1;
 }

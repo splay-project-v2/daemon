@@ -1,10 +1,16 @@
 describe("Test Crash point interpretation", function()
+
+    setup(function()
+        splay_crash = require("splay.crash")
+    end)
+
     -- CRASH POINT id_splayd [id_splayd, [...]] : <Type> : <When> 
     -- <Type> => STOP | RECOVERY x_sleep
     -- <When> => IMMEDIATELY | AFTER x_pass | RANDOM chance
+    -- STOP status code = 66, RECOVERY status code = 65
    
     it("Simple parsing", function()
-        local crash = require("splay.crash")
+        splay_crash = require("splay.crash")
         job = {position = 2}
        
         code = [[
@@ -13,9 +19,9 @@ describe("Test Crash point interpretation", function()
             -- The next line is not in account because i am the job 2 and only 1 is select
             -- CRASH POINT 1 : RECOVERY 2 : AFTER 3
         ]]
-        newCode = crash.parse_code(code, job)
-        assert.are.truthy(string.match( newCode, "crash.crash_point%(2%)"))
-        assert.are.equal(string.match( newCode, "crash.crash_point%(3%)"), nil)
+        newCode = splay_crash.parse_code(code, job)
+        assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(2%)"))
+        assert.are.equal(string.match( newCode, "splay_crash.crash_point%(3%)"), nil)
         assert.are.truthy(string.match( newCode, "-- CRASH POINT 1 : RECOVERY 2 : AFTER 3"))
 
         code = [[
@@ -24,29 +30,171 @@ describe("Test Crash point interpretation", function()
             --  CRASH   POINT   2     :RECOVERY VERY  965 :   AFTER 3   
 
         ]]
-        newCode = crash.parse_code(code, job)
-        print(newCode)
-        assert.are.truthy(string.match( newCode, "crash.crash_point%(2%)"))
+        newCode = splay_crash.parse_code(code, job)
+        assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(2%)"))
 
     end)
-    it("Test the crash point with forks", function()
-        
+    
+    it("Test the STOP - AFTER 3  crash point with fork", function()
+        splay = require("splay")
+        misc = require("splay.misc")
+
+        job = {position = 1, code = code}
+        local code = [[
+            require("splay.base")
+            splay_crash = require"splay.crash"
+            events.run(function()
+                for i=1, 10 do
+                    events.sleep(0.10)
+                    -- CRASH POINT 1 : STOP : AFTER 3
+                end
+                
+                print("Not Here")
+                events.sleep(1)
+            end)
+        ]]
+        code = splay_crash.parse_code(code, job)
+        splay_code_function, err = load(code, "job code")
+
+        time = misc.time()
+        pid = splay.fork()
+
+        if (pid < 0) then 
+            error("Error Fork (JOBD)")
+        elseif (pid  == 0) then
+            splay_code_function()
+        else
+            status = splay.get_status_process(pid)
+            time_end = misc.time()
+            assert.are.equal(status, 66)
+            assert.are.True(time_end-time >= 0.3)
+            assert.are.True(time_end-time < 0.5)
+
+        end
+    end)
+
+    it("Test the STOP - RANDOM 0.5 crash point with fork", function()
+        splay = require("splay")
+        misc = require("splay.misc")
+
+        job = {position = 1, code = code}
+        local code = [[
+            require("splay.base")
+            splay_crash = require"splay.crash"
+            events.run(function()
+                for i=1, 10 do
+                    events.sleep(0.10)
+                    -- CRASH POINT 1 : STOP : RANDOM 0.5   
+                end
+                
+                print("Not Here")
+                events.sleep(1)
+            end)
+        ]]
+        code = splay_crash.parse_code(code, job)
+        splay_code_function, err = load(code, "job code")
+
+        time = misc.time()
+        pid = splay.fork()
+
+        if (pid < 0) then 
+            error("Error Fork (JOBD)")
+        elseif (pid  == 0) then
+            splay_code_function()
+        else
+            status = splay.get_status_process(pid)
+            time_end = misc.time()
+            assert.are.equal(status, 66)
+            -- Very little chance to be bigger
+            assert.are.True(time_end-time < 1)
+        end
+    end)
+
+    it("Test the STOP - IMMEDIATELY crash point with fork", function()
+        splay = require("splay")
+        misc = require("splay.misc")
+
+        job = {position = 1, code = code}
+        local code = [[
+            require("splay.base")
+            splay_crash = require("splay.crash")
+            events.run(function()
+                -- CRASH POINT 1 : STOP : IMMEDIATELY
+                print("Not Here")
+                events.sleep(1)
+            end)
+        ]]
+        code = splay_crash.parse_code(code, job)
+        splay_code_function, err = load(code, "job code")
+
+        time = misc.time()
+        pid = splay.fork()
+
+        if (pid < 0) then 
+            error("Error Fork (JOBD)")
+        elseif (pid  == 0) then
+            splay_code_function()
+        else
+            status = splay.get_status_process(pid)
+            time_end = misc.time()
+            assert.are.equal(status, 66)
+            assert.are.True(time_end-time < 0.5)
+        end
+    end)
+
+    it("Test the RECOVERY - AFTER 5 crash point with fork", function()
+        splay = require("splay")
+        misc = require("splay.misc")
+
+        job = {position = 1, code = code}
+        local code = [[
+            require("splay.base")
+            splay_crash = require("splay.crash")
+            events.run(function()
+                events.thread(function()
+                    for i=1, 10 do
+                        events.sleep(0.05)
+                        -- CRASH POINT 1 : RECOVERY 0.2 : AFTER 3  
+                    end
+                end)
+                events.thread(function()
+                    events.sleep(0.2)
+                    print("Not HERE")
+                end)
+            end)
+        ]]
+        code = splay_crash.parse_code(code, job)
+        splay_code_function, err = load(code, "job code")
+
+        time = misc.time()
+        pid = splay.fork()
+
+        if (pid < 0) then 
+            error("Error Fork (JOBD)")
+        elseif (pid  == 0) then
+            splay_code_function()
+        else
+            status = splay.get_status_process(pid)
+            time_end = misc.time()
+            assert.are.equal(status, 65)
+            assert.are.True(time_end-time >= 0.35)
+            assert.are.True(time_end-time <= 0.5)
+        end
     end)
 
 
     it("Parse code, don't modify the code", function()
-        local crash = require("splay.crash")
-        
+       
         code = "print('ee')\nprint('ee')\nprint('ee')\n\n"
-        newCode = crash.parse_code(code)
+        newCode = splay_crash.parse_code(code)
         assert.are.equal(code, newCode)
 
         code = "print('e\ne')\nprint('e\\ne')\nprint('e\ne')"
-        newCode = crash.parse_code(code)
+        newCode = splay_crash.parse_code(code)
         assert.are.equal(code, newCode)
 
         code = 'require("splay.base")\nprint("Ok")\n\n\nprint("Multpi")'
-        newCode = crash.parse_code(code)
+        newCode = splay_crash.parse_code(code)
         assert.are.equal(code, newCode)
 
         code = [[        
@@ -291,7 +439,7 @@ describe("Test Crash point interpretation", function()
                 events.exit()
             end)
         ]]
-        newCode = crash.parse_code(code)
+        newCode = splay_crash.parse_code(code)
         assert.are.equal(code, newCode)
     end)
 end)
