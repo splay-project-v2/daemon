@@ -3,20 +3,34 @@ describe("Test Crash point interpretation", function()
     -- <Type> => STOP | RECOVERY x_sleep
     -- <When> => IMMEDIATELY | AFTER x_pass | RANDOM chance
    
-    it("Simple stop", function()
+    it("Simple parsing", function()
         local crash = require("splay.crash")
-
+        job = {position = 2}
        
+        code = [[
+            -- CRASH POINT 1 2 : STOP : AFTER 3
+            -- CRASH POINT 2 : STOP : AFTER 3
+            -- The next line is not in account because i am the job 2 and only 1 is select
+            -- CRASH POINT 1 : RECOVERY 2 : AFTER 3
+        ]]
+        newCode = crash.parse_code(code, job)
+        assert.are.truthy(string.match( newCode, "crash.crash_point%(2%)"))
+        assert.are.equal(string.match( newCode, "crash.crash_point%(3%)"), nil)
+        assert.are.truthy(string.match( newCode, "-- CRASH POINT 1 : RECOVERY 2 : AFTER 3"))
 
-        code = "-- CRASH POINT 1 : STOP : AFTER 3\nprint('Salut')"
-        crash.parse_code(code)
+        code = [[
+            --CRASH POINT 1 2:STOP:AFTER   3   
+            -- CRASH POINT 2    :RECOVERY  965 :   AFTER 3   
+            --  CRASH   POINT   2     :RECOVERY VERY  965 :   AFTER 3   
+
+        ]]
+        newCode = crash.parse_code(code, job)
+        print(newCode)
+        assert.are.truthy(string.match( newCode, "crash.crash_point%(2%)"))
 
     end)
-    it("Simple Recovery", function()
-        local crash = require("splay.crash")
-
-        code = "-- CRASH POINT 1 : RECOVERY 1 : IMMEDIATELY"
-        crash.parse_code(code)
+    it("Test the crash point with forks", function()
+        
     end)
 
 
