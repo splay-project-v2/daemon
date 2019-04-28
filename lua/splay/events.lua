@@ -866,10 +866,14 @@ end
 
 -- Useful in functions maybe called by TCP RPC so the caller get the
 -- function feed-back and socket is closed properly before exiting.
-function _M.exit()
+function _M.exit(code)
 	_M.thread(function()
 		_M.sleep(0.1)
-		os.exit()
+		if code then
+			os.exit(code)
+		else
+			os.exit()
+		end
 	end)
 end
 

@@ -66,7 +66,7 @@ if not f then
 	print("Error reading job data")
 	os.exit()
 end
---print(f:read("*a"))
+
 job = json.decode(f:read("*a"))
 f:close()
 
@@ -220,18 +220,46 @@ if job.topology then
 	socket=ts.wrap(socket)
 end
 
-
-
 -- Replace socket.core, unload the other
 package.loaded['socket.core'] = socket
 
-splay_code_function, err = load(job.code, "job code")
-job.code = nil -- to free some memory
-collectgarbage("collect")
-collectgarbage("collect")
-if splay_code_function then
-	print("Execute the code > ")
-	splay_code_function()
-else
-	print("Error loading code:", err)
+-- load crash module
+splay_crash = require("splay.crash")
+
+local function run_user_code()
+	
+
+	pid = splay.fork()
+
+	if (pid < 0) then 
+		error("Error Fork (JOBD)")
+	elseif (pid  == 0) then
+		-- Before parse for crash point
+		job.code = splay_crash.parse_code(job.code, job)
+
+		splay_code_function, err = load(job.code, "job code")
+		job.code = nil -- to free some memory
+
+		if not splay_code_function then 
+			print("Error loading code:", err)
+			error("Error loading code : "..err)
+		end
+		collectgarbage("collect")
+		collectgarbage("collect")
+
+		print("EXECUTE USER LUA CODE (job = "..job.position..")")
+		splay_code_function()
+	else
+		status = splay.get_status_process(pid)
+		if status == 65 then -- Crash point Recovery
+			print("RECOVERY CRASH : Rerun job "..job.position)
+			-- Relaunch this function
+			run_user_code()
+		elseif status == 66 then -- Crash point Stop
+			print("STOP CRASH : Terminate job "..job.position)
+			-- Do nothing = stop 
+		end
+	end
 end
+
+run_user_code()
