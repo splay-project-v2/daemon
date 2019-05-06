@@ -252,11 +252,11 @@ local function run_user_code()
 	else
 		status = splay.get_status_process(pid)
 		if status == 65 then -- Crash point Recovery
-			print("RECOVERY CRASH : Rerun job "..job.position)
+			print("RECOVERY CRASH "..job.position.." : Rerun job")
 			-- Relaunch this function
 			run_user_code()
 		elseif status == 66 then -- Crash point Stop
-			print("STOP CRASH : Terminate job "..job.position)
+			print("STOP CRASH "..job.position.." : Terminate job")
 			-- Do nothing = stop 
 		end
 	end

@@ -1,4 +1,4 @@
-/* Splay ### v1.0.6 ###
+/* Splay ### v1.3 ###
  * Copyright 2006-2011
  * http://www.splay-project.org
  */
@@ -124,16 +124,31 @@ int sp_fork(lua_State *L)
 	return 1;
 }
 
+#define MAX_INTEGER_DIGITS 21 /* up to 64 bit machines, it works. See you in 2025 */
 int sp_exec(lua_State *L)
 {
 	int i = 0;
 	int num_args = lua_gettop(L);
-	char **a = malloc((num_args + 1) * sizeof(int));
-
+	char **a = malloc((num_args + 1) * sizeof(char*));
+	
 	/* a[0] == command */
 	for (i = 1; i <= num_args; i++) {
-		a[i - 1] =(char *)lua_tostring(L, i);
+		if (lua_type(L, i) == LUA_TSTRING) {
+			a[i - 1] =(char *)lua_tostring(L, i);
+
+		}
+		else if (lua_type(L, i) == LUA_TNUMBER) {
+			int tmp_integer = lua_tointeger(L, i);
+			/* Ensure that there is enough space for integer plus the ending string char \0*/
+			char* tmp_string = malloc( (MAX_INTEGER_DIGITS + 1)  * sizeof(char));
+			sprintf(tmp_string, "%d", tmp_integer);
+			a[i - 1] = tmp_string;					
+		}
+		else {
+			printf("Invalid parameter at position %s\n",i);				
+		}
 	}
+	
 	a[num_args] = NULL;
 	if (execv(a[0], a) < 0) {
 		lua_pushnil(L);

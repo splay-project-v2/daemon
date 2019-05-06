@@ -1,4 +1,4 @@
-/* Splay ### v1.0.6 ###
+/* Splay ### v1.3 ###
  * Copyright 2006-2011
  * http://www.splay-project.org
  */
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 		}
 		if (strcmp(argv[1], "-d") == 0) {
 			/* no chdir because *.lua will no be found... */
-/*            daemon(1, 0);*/
+			/* daemon(1, 0);*/
 			tmp = daemon(1, 1);
 		}
 	}
