@@ -81,6 +81,26 @@ function _M.gen_string(times, s)
 	end
 end
 
+local table_alpha_num = {}
+for i=48,57 do
+	table_alpha_num[#table_alpha_num + 1] = string.char(i)
+end
+for i=65,90 do
+	table_alpha_num[#table_alpha_num + 1] = string.char(i)
+end
+for i=97,122 do
+	table_alpha_num[#table_alpha_num + 1] = string.char(i)
+end
+
+function _M.random_string(length)
+	if length == 0 then return "" end
+	t = {}
+	for i=1,length do
+		t[#t + 1] = table_alpha_num[math.random(1,#table_alpha_num)]
+	end
+	return table.concat(t, "")
+end
+
 function _M.split(s, sep)
        local res = {}
        sep = sep or ' '
@@ -360,9 +380,9 @@ function _M.to_dec_string(s)
 		positif = false
 	end
 
-	local t = split(s, "e")
+	local t = _M.split(s, "e")
 	local m, e = t[1], t[2]
-	local t = split(m, ".")
+	local t = _M.split(m, ".")
 	if t[2] then
 		m = t[1]..t[2]
 	end

@@ -72,4 +72,11 @@ describe("Test Splay Misc", function()
 	    assert(t)
 	    assert(misc.ctime)	
     end)
+
+    it("random string", function()
+        assert(misc.random_string)
+        assert.True(misc.random_string(10):len() == 10)
+        assert.True(misc.random_string(1000):len() == 1000)    
+    end)
+        
 end)
