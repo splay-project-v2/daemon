@@ -108,6 +108,7 @@ local UDP_OVERHEAD = 0.957087
 --[[ CONFIG ]]--
 local init_done = false
 function _M.init(settings,nodes,topology,my_pos)
+		l_o:info("TS init : "..misc.dump(topology))
 		if not init_done then
 			init_done = true	
 			pos=my_pos	

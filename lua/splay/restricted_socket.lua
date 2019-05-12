@@ -69,7 +69,7 @@ _M._VERSION     = 1.0
 _M._NAME = "splay.restricted_socket"
 
 --[[ LOG LEVEL ]]--
-local l_o = log.new(2, "[".._M._NAME.."]")
+local l_o = log.new(3, "[".._M._NAME.."]")
 
 -- vars
 local total_sent = 0

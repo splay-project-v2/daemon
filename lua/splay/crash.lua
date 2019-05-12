@@ -164,7 +164,7 @@ function _M.crash_point(id)
     end
     -- Exit if needed
     if exit then 
-        l_o:debug("Crash now")
+        print("CRASH NOW "..job.position)
         if crash.type == "STOP" then
             os.exit(66)
         elseif crash.type == "RECOVERY" then
