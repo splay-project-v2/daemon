@@ -26,7 +26,7 @@ local function line_by_line(str)
     return str:gmatch("(.-)\n")
 end
 
--- CRASH POINT id_splayd [id_splayd, [...]] : <Type> : <When> 
+-- CRASH POINT id_splayd [id_splayd [...]] : <Type> : <When> 
 -- <TYPE> => STOP | RECOVERY x_sleep
 -- <WHEN> => AFTER x_pass | RANDOM chance
 local p_crash_point = "%s*--%s*CRASH%s+POINT%s+(.+)"
@@ -57,6 +57,8 @@ local function parse_when(line, job)
         data_when = tonumber(string.match(line, p_when_random))
     else
         l_o:warning("Type of when crash - "..type_when.." is unknown : line "..i_line.." ignored")
+        -- return nothing will product a error
+        return
     end
     return {type = type_when, data = data_when}
 end

@@ -34,6 +34,57 @@ describe("Test Crash point interpretation", function()
         assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(2%)"))
 
     end)
+
+    it("Extended parsing", function()
+        splay_crash = require("splay.crash")
+        job = {position = 1}
+       
+        code_ok = [[
+            -- Crash forever the node 1 and 2 at the 4th passage
+            -- in the code
+            -- CRASH POINT 1 2 : STOP : AFTER    3
+
+            -- At each time that the code (node 1) pass by this comment,
+            -- there is 0.0002 chance to crash the node 1
+            --CRASH POINT 1: STOP : RANDOM 0.0002
+            
+            -- Crash immediately when the comment is encouter in 
+            -- the node 1, but this node will recover after 2 sec
+            -- CRASH POINT 1: RECOVERY 2 : AFTER 0
+
+            -- Have one chance on two to crash at each pass for 
+            -- the node 1, 2, 3, 4, 5. But recover immediately
+            -- CRASH POINT 1 2 3 4 5 :RECOVERY 0:RANDOM 0.5
+        ]]
+        newCode = splay_crash.parse_code(code_ok, job)
+        assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(1%)"))
+        assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(2%)"))
+        assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(3%)"))
+        assert.are.truthy(string.match( newCode, "splay_crash.crash_point%(4%)"))
+
+        code_ko = [[
+            -- Won't work because Crash point not in uppercase
+            --Crash Point 1 2 : STOP : AFTER 3   
+
+            -- Won't work because no node is specified.
+            -- CRASH POINT :RECOVERY  965 :   AFTER 3 
+
+            -- Won't work because RECOVER is not a valid
+            -- type (but warning expected).
+            -- CRASH POINT 1 2 :RECOVER 1 : AFTER 3  
+            
+            -- Won't work because TIME is not a valid type 
+            -- for now (but error expected).
+            -- CRASH POINT 1 2 :RECOVERY 1 : TIME 3
+        ]]
+        newCode = splay_crash.parse_code(code_ko, job)
+
+        assert.are.equal(string.match( newCode, "splay_crash.crash_point%(1%)"), nil)
+        assert.are.equal(string.match( newCode, "splay_crash.crash_point%(2%)"), nil)
+        assert.are.equal(string.match( newCode, "splay_crash.crash_point%(3%)"), nil)
+        assert.are.equal(string.match( newCode, "splay_crash.crash_point%(4%)"), nil)
+
+    end)
     
     it("Test the STOP - AFTER 3  crash point with fork", function()
         splay = require("splay")
