@@ -28,7 +28,7 @@ end
 
 -- CRASH POINT id_splayd [id_splayd, [...]] : <Type> : <When> 
 -- <TYPE> => STOP | RECOVERY x_sleep
--- <WHEN> => IMMEDIATELY | AFTER x_pass | RANDOM chance
+-- <WHEN> => AFTER x_pass | RANDOM chance
 local p_crash_point = "%s*--%s*CRASH%s+POINT%s+(.+)"
 local p_id_splayd = "^(.-):(.+)"
 
@@ -55,9 +55,7 @@ local function parse_when(line, job)
         data_when = tonumber(string.match(line, p_when_after))
     elseif type_when == "RANDOM" then 
         data_when = tonumber(string.match(line, p_when_random))
-    elseif type_when == "IMMEDIATELY" then
-        -- NOTHING
-    else 
+    else
         l_o:warning("Type of when crash - "..type_when.." is unknown : line "..i_line.." ignored")
     end
     return {type = type_when, data = data_when}
@@ -151,20 +149,26 @@ function _M.crash_point(id)
     exit = false
     -- When check
     if crash.when.type == "AFTER" then
-        crash.when.data = crash.when.data - 1
-        if crash.when.data == 0 then
+        if crash.when.data <= 0 then
             exit = true
         end
+        -- because AFTER 0 == Immediately crash,
+        -- and AFTER 1 -> means one passage without crash and the next passage = crash
+        crash.when.data = crash.when.data - 1
     elseif crash.when.type == "RANDOM" then 
         if math.random() < crash.when.data then
             exit = true
         end
-    elseif crash.when.type == "IMMEDIATELY" then
-        exit = true
+    else 
+        l_o:warning("Type of 'when' crash not recognize : " .. crash.when.type)
     end
     -- Exit if needed
-    if exit then 
-        print("CRASH NOW "..job.position)
+    if exit then
+        if job and job.position then
+            print("CRASH NOW "..job.position)
+        else
+            print("CRASH NOW but unknown job position")
+        end
         if crash.type == "STOP" then
             os.exit(66)
         elseif crash.type == "RECOVERY" then

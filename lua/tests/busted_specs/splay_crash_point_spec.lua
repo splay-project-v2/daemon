@@ -6,7 +6,7 @@ describe("Test Crash point interpretation", function()
 
     -- CRASH POINT id_splayd [id_splayd, [...]] : <Type> : <When> 
     -- <Type> => STOP | RECOVERY x_sleep
-    -- <When> => IMMEDIATELY | AFTER x_pass | RANDOM chance
+    -- <When> => AFTER x_pass | RANDOM chance
     -- STOP status code = 66, RECOVERY status code = 65
    
     it("Simple parsing", function()
@@ -45,8 +45,8 @@ describe("Test Crash point interpretation", function()
             splay_crash = require"splay.crash"
             events.run(function()
                 for i=1, 10 do
-                    events.sleep(0.10)
                     -- CRASH POINT 1 : STOP : AFTER 3
+                    events.sleep(0.10)
                 end
                 
                 print("Not Here")
@@ -69,7 +69,6 @@ describe("Test Crash point interpretation", function()
             assert.are.equal(status, 66)
             assert.are.True(time_end-time >= 0.3)
             assert.are.True(time_end-time < 0.5)
-
         end
     end)
 
@@ -110,7 +109,7 @@ describe("Test Crash point interpretation", function()
         end
     end)
 
-    it("Test the STOP - IMMEDIATELY crash point with fork", function()
+    it("Test the STOP - AFTER 0 crash point with fork", function()
         splay = require("splay")
         misc = require("splay.misc")
 
@@ -119,7 +118,7 @@ describe("Test Crash point interpretation", function()
             require("splay.base")
             splay_crash = require("splay.crash")
             events.run(function()
-                -- CRASH POINT 1 : STOP : IMMEDIATELY
+                -- CRASH POINT 1 : STOP : AFTER 0
                 print("Not Here")
                 events.sleep(1)
             end)
@@ -142,7 +141,7 @@ describe("Test Crash point interpretation", function()
         end
     end)
 
-    it("Test the RECOVERY - AFTER 5 crash point with fork", function()
+    it("Test the RECOVERY - AFTER 3 crash point with fork", function()
         splay = require("splay")
         misc = require("splay.misc")
 
@@ -153,8 +152,8 @@ describe("Test Crash point interpretation", function()
             events.run(function()
                 events.thread(function()
                     for i=1, 10 do
-                        events.sleep(0.05)
                         -- CRASH POINT 1 : RECOVERY 0.2 : AFTER 3  
+                        events.sleep(0.05)
                     end
                 end)
                 events.thread(function()
@@ -177,6 +176,7 @@ describe("Test Crash point interpretation", function()
             status = splay.get_status_process(pid)
             time_end = misc.time()
             assert.are.equal(status, 65)
+            -- Recovery 0.2 + 3 * 0.05 sleep
             assert.are.True(time_end-time >= 0.35)
             assert.are.True(time_end-time <= 0.5)
         end
