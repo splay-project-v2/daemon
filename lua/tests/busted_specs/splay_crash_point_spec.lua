@@ -115,7 +115,7 @@ describe("Test Crash point interpretation", function()
         elseif (pid  == 0) then
             splay_code_function()
         else
-            status = splay.get_status_process(pid)
+            status = splay.waitpid(pid)
             time_end = misc.time()
             assert.are.equal(status, 66)
             assert.are.True(time_end-time >= 0.3)
@@ -152,7 +152,7 @@ describe("Test Crash point interpretation", function()
         elseif (pid  == 0) then
             splay_code_function()
         else
-            status = splay.get_status_process(pid)
+            status = splay.waitpid(pid)
             time_end = misc.time()
             assert.are.equal(status, 66)
             -- Very little chance to be bigger
@@ -185,7 +185,7 @@ describe("Test Crash point interpretation", function()
         elseif (pid  == 0) then
             splay_code_function()
         else
-            status = splay.get_status_process(pid)
+            status = splay.waitpid(pid)
             time_end = misc.time()
             assert.are.equal(status, 66)
             assert.are.True(time_end-time < 0.5)
@@ -224,7 +224,7 @@ describe("Test Crash point interpretation", function()
         elseif (pid  == 0) then
             splay_code_function()
         else
-            status = splay.get_status_process(pid)
+            status = splay.waitpid(pid)
             time_end = misc.time()
             assert.are.equal(status, 65)
             -- Recovery 0.2 + 3 * 0.05 sleep

@@ -5,6 +5,7 @@ CC= gcc
 
 INCLUDE= -I/usr/include/lua5.3
 
+# In some system change -llua by -llua5.3
 LIBS= -L/usr/lib/lua5.3/ -llua -lm
 OPENSSL_LIBS= -L/usr/local/openssl/lib -lssl
 

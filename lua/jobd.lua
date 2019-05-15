@@ -250,7 +250,7 @@ local function run_user_code()
 		print("EXECUTE USER LUA CODE (job = "..job.position..")")
 		splay_code_function()
 	else
-		status = splay.get_status_process(pid)
+		status = splay.waitpid(pid)
 		if status == 65 then -- Crash point Recovery
 			print("RECOVERY CRASH "..job.position.." : Rerun job")
 			-- Relaunch this function

@@ -34,6 +34,6 @@ int sp_exec(lua_State *L);
 int sp_kill(lua_State *L);
 int sp_alive(lua_State *L);
 int sp_mkdir(lua_State *L);
-int sp_get_status_process(lua_State *L);
+int sp_waitpid(lua_State *L);
 
 #endif /* SPLAY_H */

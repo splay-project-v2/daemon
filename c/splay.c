@@ -54,7 +54,7 @@ static const luaL_reg sp_funcs[] =
 	{"kill", sp_kill},
 	{"alive", sp_alive},
 	{"mkdir", sp_mkdir},
-	{"get_status_process", sp_get_status_process},
+	{"waitpid", sp_waitpid},
 	{NULL, NULL}
 };
 
@@ -93,7 +93,7 @@ int sp_endian(lua_State *L)
 	return 1;
 }
 
-int sp_get_status_process(lua_State *L) {
+int sp_waitpid(lua_State *L) {
 	if (lua_isnumber(L, 1)) {
 		pid_t pid = lua_tointeger(L, 1);
 		int status;
@@ -106,7 +106,7 @@ int sp_get_status_process(lua_State *L) {
 		}
 	} else {
 		lua_pushnil(L);
-		lua_pushstring(L, "get_status_process(pid) requires an int");
+		lua_pushstring(L, "waitpid(pid) requires an int");
 		return 2;
 	}
 }

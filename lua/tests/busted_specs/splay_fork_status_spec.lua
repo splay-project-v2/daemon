@@ -10,7 +10,7 @@ describe("Test Splay fork and status code of the child process", function()
         elseif (pid  == 0) then
             os.exit(exit_code)
         else
-            status = splay.get_status_process(pid)
+            status = splay.waitpid(pid)
             assert.are.equal(status,exit_code)
         end
     end)
