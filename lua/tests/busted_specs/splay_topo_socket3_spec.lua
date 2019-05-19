@@ -10,6 +10,10 @@ describe("Test Splay Topology socket - 2", function()
         local topo = json.decode('{"2":{"1":[250,5000,["2","1"],[5000]]},"1":{"2":[100,5000,["1","2"],[5000]]}}')
         local my_pos = 1
 
+        local rs=require"splay.restricted_socket"
+        assert(rs.init({max_sockets=1024}))
+        socket = rs.wrap(socket) --to gather stats on network IO and simulate in-controller deploy
+
         local socket = require"socket.core"
         local ts = require"splay.topo_socket"
         assert(ts.init(settings, nodes, topo, my_pos))
@@ -90,7 +94,7 @@ describe("Test Splay Topology socket - 2", function()
     
                 print("connection from: "..ip..":"..port.." - peer node index = "..s:node_peer())
             end
-            s:update_node_peer(connect)
+            -- s:update_node_peer(connect)
         end
         
         function final(s)
@@ -108,7 +112,7 @@ describe("Test Splay Topology socket - 2", function()
                 net.client({ip= '127.0.0.1', port= 11001}, {initialize = init, send = send_c, receive = receive_c, finalize = final})
             end)
 
-            events.sleep(2)
+            events.sleep(1)
             events.kill(t_ser)
         end)
     end)

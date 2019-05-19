@@ -194,6 +194,9 @@ print()
 -- We absolutly need to load restricted_socket BEFORE any library that can use
 -- LuaSocket because the library could, if we don't do that, have a local copy
 -- of original, non wrapped, (or non configured) socket functions.
+
+-- COMPLETELY USELESS, we can deloaded package per this line of code
+-- package.loaded["socket"] = nil
 socket = require"socket.core"
 
 rs = require("splay.restricted_socket")
