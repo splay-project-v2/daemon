@@ -90,6 +90,8 @@ local current_downloads={}
 local current_downloads_counter=0
 local raw_topology=nil
 local pos=nil
+-- copy of node for peer node exchange
+local raw_nodes=nil
 --[[
 The dynamic_tree represents the tree rooted at this node. It is initialized
 from the static model sent by the controller. The weights on the edges
@@ -141,6 +143,7 @@ function _M.init(settings,nodes,topology,my_pos)
 			global_topology={}
 			if topology then
 				raw_topology=misc.dup(topology) --save it for later
+				raw_nodes = nodes
 				
 				for k,t in pairs(topology) do
 					l_o:debug("Topology infos (pos:"..k..",ip:"..nodes[tonumber(k)].ip..",port:"..nodes[tonumber(k)].port.."):")
@@ -329,14 +332,8 @@ local function udp_sock_wrapper(sock)
 			local data, msg = sock:receive(...)
 		
 			l_o:debug("receive",data,msg)
-			accept_datagram=true
 		
-			if not accept_datagram then
-				return nil,'timeout'
-			else
-				return data,msg
-			end
-			
+			return data,msg
 		end
 	end
 
@@ -488,7 +485,7 @@ local function tcp_sock_wrapper(sock)
 	local outgoing_non_conformant_datas={}
 	
 	local new_sock = {}
-	
+
 	-- This socket is called with ':', so the 'self' refer to socket but, in
 	-- the call, self is the wrapping table, we need to replace it by socket.
 	local mt = {
@@ -500,10 +497,45 @@ local function tcp_sock_wrapper(sock)
 		end,
 		__tostring = function()
 			return "#TS (TCP): "..tostring(sock)
-		end}
+		end
+	}
 
 	setmetatable(new_sock, mt)
-	
+
+	local node_peer = nil 
+	new_sock.node_peer = function(self)
+		return node_peer
+	end
+
+	new_sock.set_node_peer = function(self, node)
+		node_peer = node
+	end
+
+	new_sock.update_node_peer = function(self, is_server)
+		l_o:info("update_node_peer : "..tostring(self).. " is server  = "..tostring(is_server))
+		local ip, port = self:getpeername()
+		if pos == nil then
+			l_o:warning("No pos defined for update node peer")
+			return false, "No pos defined"
+		end
+		if is_server then
+			self:send(pos.."\n")
+			local d = self:receive()
+
+			self:set_node_peer(tonumber(d))
+
+			l_o:info("connection to: "..ip..":"..port.." - peer node index = "..self:node_peer())
+		else
+			local d,err  = self:receive()
+			self:send(pos.."\n")
+			
+			self:set_node_peer(tonumber(d))
+
+			l_o:info("connection from: "..ip..":"..port.." - peer node index = "..self:node_peer())
+		end
+		return true
+	end
+
 	if sock.receive then
 		--[[
 		The idea would be to see how much data was received during the last
@@ -511,7 +543,11 @@ local function tcp_sock_wrapper(sock)
 		seconds so that the observed effect would be a limited-rate download
 		speed.
 		]]
-		new_sock.receive = function(self, pattern, prefix,start_time)			
+		new_sock.receive = function(self, pattern, prefix,start_time)
+			if self:node_peer() ~= nil then
+				l_o:debug("Receive node peer defined : "..self:node_peer())
+			end
+
 			l_o:debug("tcp.receive()")
 			if in_delay>0 then
 				local w0=misc.time()
@@ -529,12 +565,28 @@ local function tcp_sock_wrapper(sock)
 	
 	if sock.send then
 		new_sock.send = function(self, data, start, stop)
+			if self.node_peer and self:node_peer() ~= nil then
+				l_o:info("Send node peer defined : "..self:node_peer())
+			end
+
 			l_o:debug("tcp.send()",data,start,stop)			
 			local delay=out_delay 
 
 			local peer_ip,peer_port=self:getpeername()
-			l_o:debug("Socket peername:",peer_ip..":"..peer_port)		
+			l_o:info("Socket peername:",peer_ip..":"..peer_port)		
 			local dst=peer_ip..":"..peer_port
+
+			if global_topology[dst]==nil then
+				l_o:debug("Don't know ip/port peer, try with peer_node function")
+				if self.node_peer and self:node_peer() ~= nil then
+					-- Try with peer node
+					node = raw_nodes[self:node_peer()]
+					if node ~= nil then
+						dst = node.ip..":"..node.port
+						l_o:info("peer_node defined and correct the true destination is "..dst)
+					end
+				end
+			end
 			--when server  socket sends back ACK on splay RPC, the destination is 
 			--the client_socket which is not known in advance for TCP or default UDP, answer sent back at raw speed.
 			if global_topology[dst]==nil then
@@ -701,12 +753,11 @@ local function tcp_sock_wrapper(sock)
 			-- select it every time we don't take it, but if the number of
 			-- socket is too high, we will close the socket immediately.
 			local s, err = sock:accept()					
-			if not s then return nil, err end		
-			local accept_connection = true
-			if accept_connection then 	return tcp_sock_wrapper(s)
-			else return nil, err end
+			if s == nil then 
+				return nil, err 
+			end		
 			
-			l_o:debug("New peer: "..s:getpeername())
+			l_o:info("New peer: "..s:getpeername())
 			return tcp_sock_wrapper(s)
 		end
 	end	
