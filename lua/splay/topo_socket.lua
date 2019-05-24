@@ -74,7 +74,7 @@ _M = {}
 _M._NAME = "splay.topo_socket"
 
 --[[ DEBUG ]]--
-local l_o = log.new(2, "[".._M._NAME.."]")
+local l_o = log.new(1, "[".._M._NAME.."]")
 
 local in_delay=0
 local out_delay=0
@@ -437,8 +437,13 @@ local function udp_sock_wrapper(sock)
 						sent=true
 					else
 						l_o:debug("Not enough tokens, available: ",dest_tb.get_tokens(),"required=",data_bytes)
-					end				
-					local ok, r = coroutine.yield("event:sleep", 1) --wait next clock tic for more tokens...					
+					end
+					if not sent then
+						local fillrate = global_topology[dst][2]
+						local wait_tokens = (data_bytes - dest_tb.get_tokens()) / fillrate
+						l_o:debug("Wait "..wait_tokens.." for tokens")
+						local ok, r = coroutine.yield("event:sleep", wait_tokens) --wait next clock tic for more tokens...		
+					end			
 				end
 				local w1=misc.time()
 				local eff_upload_time=w1-w0
