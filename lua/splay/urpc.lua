@@ -109,14 +109,13 @@ local type = type
 local unpack = table.unpack
 local tonumber = tonumber
 
---module("splay.urpc")
 local _M = {}
 _M._COPYRIGHT   = "Copyright 2006 - 2011"
 _M._DESCRIPTION = "UDP RPC"
 _M._VERSION     = 1.0
 _M._NAME = "splay.urpc"
 --[[ DEBUG ]]--
-_M.l_o = log.new(3, "[".._M._NAME.."]")
+l_o = log.new(3, "[".._M._NAME.."]")
 
 _M.settings = {
 	max = nil, -- max outgoing RPCs
@@ -199,7 +198,7 @@ local function reply(s, data, ip, port)
 			data.error = "reply length ("..length..")"
 			-- we were optimistic, we need to reencode now...
 			reply_s = enc.encode(data)
-			_M.l_o:warning("reply(): too much data")
+			l_o:warning("reply(): too much data")
 		end
 	else
 		reply_s = enc.encode(data)
@@ -207,7 +206,7 @@ local function reply(s, data, ip, port)
 
 	local ok, err = s:sendto(reply_s, ip, port)
 	if not ok then
-		_M.l_o:warn("sendto(): "..err)
+		l_o:warn("sendto(): "..err)
 	end
 end
 
@@ -217,7 +216,8 @@ local function process_one_msg(s, data, ip, port)
 		if data.reply then -- we have received a reply
 			messages[data.key] = nil
 			if _M.settings.try_free then
-				s:sendto(enc.encode({free = true, key = data.key}), ip, port)
+				-- Async free to avoid loss time if socket is restricted
+				events.thread(function () s:sendto(enc.encode({free = true, key = data.key}), ip, port) end)
 			end
 			return events.fire("urpc:"..data.key, data)
 		elseif data.free then -- we have received a free packet
@@ -226,7 +226,7 @@ local function process_one_msg(s, data, ip, port)
 			return reply(s, data, ip, port)
 		end
 	else
-		_M.l_o:warn("corrupted message")
+		l_o:warn("corrupted message")
 	end
 end
 
@@ -234,14 +234,14 @@ end
 local function sender(s)
 	while true do
 
-		_M.l_o:debug("sender() loop")
+		l_o:debug("sender() loop")
 		local q = {}
 		local now, next_wakeup = misc.time()
 
 		for key, data in pairs(messages) do
 			if data.next_try <= now then
 			
-				_M.l_o:debug("try", data.nb_try, data.key)
+				l_o:debug("try", data.nb_try, data.key)
 
 				-- add to the send queue
 				q[#q + 1] = misc.dup(data)
@@ -265,8 +265,9 @@ local function sender(s)
 
 		if #q > 0 then
 			for _, data in pairs(q) do
-				-- sending
-				s:sendto(data.enc, data.ip, data.port)
+				-- sending - thread for avoiding block other rpc
+				events.thread(function () s:sendto(data.enc, data.ip, data.port) end)
+
 				-- unconnected->connected
 				local ip,port = s:getsockname()
 				server_port=port
@@ -276,10 +277,10 @@ local function sender(s)
 		end
 
 		if next_wakeup then
-			_M.l_o:debug("wait", next_wakeup - now)
+			l_o:debug("wait", next_wakeup - now)
 			events.wait("urpc:sender", next_wakeup - now)
 		else
-			_M.l_o:debug("wait")
+			l_o:debug("wait")
 			events.wait("urpc:sender")
 		end
 	end
@@ -294,9 +295,9 @@ local function receiver(s)
 			end)
 		else
 			if ip == "timeout" then
-				_M.l_o:warn("receivefrom(): "..ip)
+				l_o:warn("receivefrom(): "..ip)
 			else
-				_M.l_o:notice("receivefrom(): server closed")
+				l_o:notice("receivefrom(): server closed")
 				break
 			end
 		end
@@ -322,16 +323,16 @@ function _M.server(port)
 	
 	local s, err = socket.udp()
 	if not s then
-		_M.l_o:warn("udp():"..err)
+		l_o:warn("udp():"..err)
 		return nil, err
 	end
 
-	_M.l_o:notice("URPC server bound on port "..port)
+	l_o:notice("URPC server bound on port "..port)
 	
 	local r, err = s:setsockname(ip, port)
 	
 	if not r then
-		_M.l_o:warn("setsockname("..port.."): "..err)
+		l_o:warn("setsockname("..port.."): "..err)
 		return nil, err
 	end
 
@@ -356,7 +357,7 @@ function _M.default_server()
 
 	local s, err = socket.udp()
 	if not s then
-		_M.l_o:warn("udp():"..err)
+		l_o:warn("udp():"..err)
 		return nil, err
 	end
 	events.thread(function() sender(s) end)
@@ -381,7 +382,7 @@ local function do_call(ip, port, typ, call, timeout)
 	if (timeout and _M.settings.cleaning_after and
 			timeout > _M.settings.cleaning_after * 0.9) or
 			(not timeout and _M.settings.cleaning_after) then
-		_M.l_o:warn("do_call adjusted timeout", timeout)
+		l_o:warn("do_call adjusted timeout", timeout)
 		timeout = _M.settings.cleaning_after * 0.9
 	end
 
@@ -396,7 +397,7 @@ local function do_call(ip, port, typ, call, timeout)
 	local edatac = enc.encode(datac)
 	local l = #edatac
 	if l > 8192 then
-		_M.l_o:warn("RPC UDP too big to be sent: "..l)
+		l_o:warn("RPC UDP too big to be sent: "..l)
 		return nil, "call length ("..l..")"
 	end
 
@@ -466,7 +467,7 @@ function _M.acall(ip, port, call, timeout)
 	-- support for a node array with ip and port
 	if type(ip) == "table" then
 		if not ip.ip or not ip.port then
-			_M.l_o:warn("parameter array without ip or port")
+			l_o:warn("parameter array without ip or port")
 			return false, "parameter array without ip or port"
 		else
 			timeout = call
@@ -477,7 +478,7 @@ function _M.acall(ip, port, call, timeout)
 	end
 	
 	if timeout ~=nil and tonumber(timeout)==nil then
-		_M.l_o:warn("invalid timeout value: ",timeout)
+		l_o:warn("invalid timeout value: ",timeout)
 		return false, "invalid timeout value: "..timeout
 	end
 	
@@ -487,8 +488,6 @@ function _M.acall(ip, port, call, timeout)
 
 	return do_call(ip, port, "call", call, timeout)
 end
--- DEPRECATED
---function a_call(...) return acall(...) end
 
 function _M.ecall(ip, port, func, timeout)
 	local ok, r = _M.acall(ip, port, func, timeout)

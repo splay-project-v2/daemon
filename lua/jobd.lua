@@ -212,9 +212,29 @@ rs.init(settings)
 socket = rs.wrap(socket)
 -----------------------------------------------------------------------------
 
+function all_different_ip(nodes)
+	local exist = {}
+	for i, n in pairs(job.nodes) do
+		if exist[n.ip] ~= nil then
+			return false
+		end
+		exist[n.ip] = true
+	end
+	return true
+end
+
 --[[ Topology Socket - SplayNet ]]--
 if job.topology then
-	local ts = require"splay.topo_socket"
+	local ts = nil 
+	-- If all ip is different for each node -> used topo_ip_socket because, it doesn't take in account 
+	-- the port to apply the topology, avoiding the problem of client unknown destination
+	if all_different_ip(job.nodes) then
+		ts = require"splay.topo_ip_socket"
+	else 
+		ts = require"splay.topo_socket"
+	end
+
+	print("As topology manager : "..ts._NAME)
 	-- settings : empty table, can be choose by user ? 
 	assert(ts.init({}, job.nodes, job.topology, job.position))
 	socket=ts.wrap(socket)

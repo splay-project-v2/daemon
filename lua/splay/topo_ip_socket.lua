@@ -21,11 +21,16 @@ Splayd.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 --[[
 
+TO READ : it is a copy of the topo_socket.lua file but a small change
+fixing the problem of client unknown destination if a other port is used than in nodes list. 
+It can be done only if all ip of each node is different, then check before 
+
 USAGE:
 
 socket = require"socket.core"
-ts = require"splay.topo_socket"
-ts.init(settings)
+ts = require"splay.topo_ip_socket"
+-- settings : empty table, can be choose by user ? 
+assert(ts.init({}, job.nodes, job.topology, job.position))
 socket = ts.wrap(socket)
 require"splay.base"
 
@@ -71,7 +76,7 @@ local unpack=table.unpack
 local assert = assert
 
 _M = {}
-_M._NAME = "splay.topo_socket"
+_M._NAME = "splay.topo_ip_socket"
 
 --[[ DEBUG ]]--
 local l_o = log.new(2, "[".._M._NAME.."]")
@@ -107,6 +112,7 @@ local TCP_OVERHEAD = 0.949285
 local UDP_OVERHEAD = 0.957087
 --[[ CONFIG ]]--
 local init_done = false
+
 function _M.init(settings,nodes,topology,my_pos)
 		l_o:info("TS init : "..misc.dump(topology))
 		if not init_done then
@@ -150,8 +156,6 @@ function _M.init(settings,nodes,topology,my_pos)
 							l_o:error("Can't read topology informations for node in pos:",dst)
 							break
 						end
-						l_o:debug(nodes[tonumber(dst)].port)
-						l_o:debug(nodes[tonumber(dst)].ip)
 					
 						if tonumber(infos[3][1])==my_pos then --keep only local topology informations (other infos can be used for router congestion emulation,requires changing datastructure)
 							l_o:debug("raw path: ", table.concat(infos[3]," "))
@@ -161,7 +165,7 @@ function _M.init(settings,nodes,topology,my_pos)
 							local bucket=tb.new(infos[2]*128, infos[2]*128 )
 							local dst_n=nodes[tonumber(dst)]
 						
-							--[[key: the ip:port of the node, value: topology-related infos to reach key
+							--[[key: the ip of the node (all different post condition), value: topology-related infos to reach key
 							global_topology[k][1]=out-delay to k
 							global_topology[k][2]=max-bw to k (without path conflicts)
 							global_topology[k][3]=token-bucket initialized for this point-to-point transfer
@@ -170,7 +174,7 @@ function _M.init(settings,nodes,topology,my_pos)
 							global_topology[k][6]=dynamically adjusted value for the outgoing bw. Initially set to g[k][5] but adjusted at runtime
 							global_topology[k].position=the position of this node in the original list of nodes (TODO: churn?)
 							--]]
-							global_topology[dst_n.ip..":"..dst_n.port]={infos[1],infos[2]*128,bucket,infos[3],infos[4],infos[2]*128,position=tonumber(dst)} --out-delay,out-bw,token_bucket,full-path,kbps_hops,current-out-bw
+							global_topology[dst_n.ip]={infos[1],infos[2]*128,bucket,infos[3],infos[4],infos[2]*128,position=tonumber(dst)} --out-delay,out-bw,token_bucket,full-path,kbps_hops,current-out-bw
 							total_bw_out=total_bw_out+infos[2]
 							--build the tree rooted at this node based on the paths received by the controller.
 							_M.add_nodes_to_tree(infos[3],infos[4])				
@@ -371,7 +375,7 @@ local function udp_sock_wrapper(sock)
 			local bw=bw_out
 			local peer_ip,peer_port=self:getpeername()
 			l_o:debug("Socket peername:",peer_ip..":"..peer_port)		
-			local dst=peer_ip..":"..peer_port
+			local dst=peer_ip
 			if global_topology[dst]~=nil then
 				l_o:debug("Emulating connection with delay and kbps:",global_topology[dst][1],global_topology[dst][2])
 				delay=tonumber(global_topology[dst][1]/1000.0)
@@ -399,7 +403,7 @@ local function udp_sock_wrapper(sock)
 			l_o:debug("sendto,  "..ip..":"..port)
 			local delay=out_delay --default value, specific for this node and for any outgoing message
 			local bw=bw_out
-			local dst=ip..":"..port
+			local dst=ip
 			local dest_tb=nil -- token_bucket for the partner
 			if global_topology[dst]~=nil then  --on UDP, ack packets are sent on different PORT 			
 				l_o:debug("Emulating connection with delay and kbps:",global_topology[dst][1],global_topology[dst][2])
@@ -540,7 +544,7 @@ local function tcp_sock_wrapper(sock)
 
 			local peer_ip,peer_port=self:getpeername()
 			l_o:debug("Socket peername:",peer_ip..":"..peer_port)		
-			local dst=peer_ip..":"..peer_port
+			local dst=peer_ip
 			--when server  socket sends back ACK on splay RPC, the destination is 
 			--the client_socket which is not known in advance for TCP or default UDP, answer sent back at raw speed.
 			if global_topology[dst]==nil then
@@ -661,7 +665,7 @@ local function tcp_sock_wrapper(sock)
 			--[[
 			With TCP, 3-way handshake to be considered to compute the delays.
 			]]--
-			local dst=ip..":"..port
+			local dst=ip
 			if global_topology[dst]~=nil then
 				--[[
 				The *2 factor is because we cannot emulate the delay on the backlink due to the 
