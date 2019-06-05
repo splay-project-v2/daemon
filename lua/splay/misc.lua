@@ -102,16 +102,16 @@ function _M.random_string(length)
 end
 
 function _M.split(s, sep)
-       local res = {}
-       sep = sep or ' '
-       for v in s:gmatch('[^' .. sep .. ']+') do
-               res[#res + 1] = v
-       end
-       return res
+	local res = {}
+	sep = sep or ' '
+	for v in s:gmatch('[^' .. sep .. ']+') do
+		res[#res + 1] = v
+	end
+	return res
 end
 
 
---[[ Size of a table with any kind of indexing ]]--
+--[[ Size of a table with any kind of indexing - complexity : O(n) ]]--
 function _M.size(t)
 	local c = 0
 	for _, _ in pairs(t) do c = c + 1 end

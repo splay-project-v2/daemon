@@ -70,11 +70,8 @@ end
 
 --[[ Local FS functions ]]--
 
-function clean_dir(dir, rec)
-	if not rec then
-		rec = false
-	end
-	if rec then
+function clean_dir(dir, recursif)
+	if recursif == true then
 		os.execute("rm -fr "..dir.."/* > /dev/null 2>&1")
 	else
 		os.execute("rm -f "..dir.."/* > /dev/null 2>&1")
@@ -297,7 +294,7 @@ will be scanned until we find one.
 We suppose the avaible port range beeing a lot of wider than the range to
 reserve.
 
-The random separator (r_start), deny the algorythm to test all the
+The random separator (r_start), deny the algorithm to test all the
 possibilities, but given the above condition that should not be a problem.
 --]]
 function find_reserve_rand_ports(nb_ports)
@@ -391,10 +388,7 @@ function register(so)
 	end
 
 	-- Check for max_number
-	local nb_jobs = 0
-	for _, _  in pairs(splayd.jobs) do
-		nb_jobs = nb_jobs + 1
-	end
+	local nb_jobs = misc.size(splayd.jobs)
 	if nb_jobs >= s.max_number then
 		assert(so:send("NO_NEW"))
 		return
@@ -589,7 +583,7 @@ function prepare_lib_directory(job)
 			os.execute("ln "..libs_cache_dir.."/"..job.lib_sha1.. " " .. job.disk.lib_directory.."/"..job.lib_name)
 		end
 	else
-		print("Wrong job configuration")
+		print("Wrong job configuration : job.disk missing")
 		return false
 	end
 	return true
@@ -615,13 +609,13 @@ function n_log(so)
 	local json_logv=assert(so:receive())
 	splayd.settings.log = json.decode(json_logv)
 	--print("LOG IP:PORT:",splayd.settings.log.ip, splayd.settings.log.port)
-	--TODO check that the IP is valid, if not refuse it
+	-- TODO check that the IP is valid, if not refuse it
 	if not splayd.settings.log.ip or type(splayd.settings.log.ip)~="string" then
-		print("WARN : ip not send or incorrect type")
+		print("WARN : ip not send or incorrect type, use ip setting of controller")
 		splayd.settings.log.ip = splayd.settings.controller.ip
 	end
 	if not splayd.settings.log.port or type(splayd.settings.log.port)~="number" then 
-		print("WARN : port not send or incorrect type")
+		print("WARN : port not send or incorrect type, use port setting of controller")
 		splayd.settings.log.port = splayd.settings.controller.port
 	end
 	assert(so:send("OK"))
@@ -887,7 +881,7 @@ function halt(so)
 		return false
 	end
 
-	running = false
+	halt_splayd()
 	assert(so:send("OK"))
 	-- restablish timeout
 	so:settimeout(so_timeout)
@@ -895,24 +889,12 @@ function halt(so)
 end
 
 function test(so)
+	print("Test function (fork test)")
 	local pid = splay.fork()
-	local s
 
-	if pid == 0 then -- job
-		print("FORK")
-		s = nil
-
-		-- assert(so:send("FORK"))
-		if SSL then
-			--so:clear()
-			s = nil
-			print("QUIT")
-			os.exit()
-		else
-			--so:close()
-			print("QUIT")
-			os.exit()
-		end
+	if pid == 0 then -- job fork 
+		print("FORK - QUIT")
+		os.exit()
 	end
 end
 
@@ -982,7 +964,7 @@ local function one_loop(so)
 				return false
 			end
 		elseif msg == "KILL" then
-			running = false
+			halt_splayd()			
 			return false
 		elseif msg == "ERROR" then
 			return false
@@ -1108,7 +1090,7 @@ function controller(so)
 		local reason = assert(so:receive())
 		print("Refused: "..reason)
 		if not always_run then
-			running = false
+			halt_splayd()
 		end
 		return
 	end
@@ -1139,11 +1121,10 @@ end
 function check()
 	local s = splayd.settings.job
 
-	-- Force right settings when using in production.
+	-- Force right settings when using in production. splayd.set_max_mem is never set ???
 	if production and not splayd.set_max_mem then
 		print("Production mode must be run from the C daemon. DISEABLE FOR NOW")
-		-- TODO : Uncomment when understand this part
-		-- return false
+		return false
 	end
 
 	if lua_version ~= _VERSION then
@@ -1152,18 +1133,17 @@ function check()
 		return false
 	end
 
-	if
-			not (s.max_number > 0) or
-			not (s.max_mem > 0) or
-			not (s.disk.max_size > 0) or
-			not (s.disk.max_files > 0) or
-			not (s.disk.max_file_descriptors > 0) or
-			not (s.network.max_send > 0) or
-			not (s.network.max_receive > 0) or
-			not (s.network.max_sockets > 0) or
-			not (s.network.max_ports > 0) or
-			not (s.network.start_port > 0) or
-			not (s.network.end_port > 0) then
+	if 	not (s.max_number > 0) or
+		not (s.max_mem > 0) or
+		not (s.disk.max_size > 0) or
+		not (s.disk.max_files > 0) or
+		not (s.disk.max_file_descriptors > 0) or
+		not (s.network.max_send > 0) or
+		not (s.network.max_receive > 0) or
+		not (s.network.max_sockets > 0) or
+		not (s.network.max_ports > 0) or
+		not (s.network.start_port > 0) or
+		not (s.network.end_port > 0) then
 
 		-- unlimited is NOT acceptable (and is a non sense)
 		print("Limits MUST have values > 0. Check your settings.")
@@ -1367,7 +1347,6 @@ if production then
 end
 
 if SSL then
-	--ssl = require"splay.ssl"
 	ssl = require"ssl" -- LuaSec
 else
 	socket = require"socket"
@@ -1378,7 +1357,7 @@ end
 -- Default settings
 --[[ DO YOUR SETTINGS CHANGE IN settings.lua ]]--
 
--- splayd already exists (from the C env)
+-- splayd already exists (from the C env or empty object)
 
 splayd.settings = {}
 
@@ -1469,13 +1448,6 @@ else
 	splayd.status.uptime = "1"
 	splayd.status.loadavg = "1.0 1.0 1.0"
 end
-
-
---[[ These information seems not very interesting... maybe one day.
-splayd.status.ram =
-splayd.status.cpu_speed =
-splayd.status.nb_cpu =
---]]
 
 --[[ Blacklist base
 Note: There is no (portable) way to know all our IPs, but when a new job is

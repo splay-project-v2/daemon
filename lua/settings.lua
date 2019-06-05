@@ -39,7 +39,7 @@ splayd.settings.protocol = "standard"
 -- all sizes are in bytes
 splayd.settings.job.max_number = 16
 --
-splayd.settings.job.max_mem = 20 * 1024 * 1024 -- 12 Mo
+splayd.settings.job.max_mem = 20 * 1024 * 1024 -- 20 Mo
 --
 splayd.settings.job.disk.max_size = 1024 * 1024 * 1024 -- 1 Go
 splayd.settings.job.disk.max_files = 1024

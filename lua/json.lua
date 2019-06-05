@@ -1,7 +1,7 @@
 --
 -- json.lua
 --
--- Copyright (c) 2018 rxi
+-- Copyright (c) 2019 rxi
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of
 -- this software and associated documentation files (the "Software"), to deal in
@@ -21,7 +21,6 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 --
-
 
 -- MIT license : https://github.com/rxi/json.lua
 
@@ -68,7 +67,7 @@ local function encode_table(val, stack)
 
   stack[val] = true
 
-  if val[1] ~= nil or next(val) == nil then
+  if rawget(val, 1) ~= nil or next(val) == nil then
     -- Treat as array -- check keys are valid and it is not sparse
     local n = 0
     for k in pairs(val) do
